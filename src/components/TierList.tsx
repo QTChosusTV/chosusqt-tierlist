@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { addPointsToPlayers, sortPlayersByPoints } from '@/lib/utils';
 import PlayerRow from './PlayerRow';
@@ -81,34 +81,37 @@ export default function TierList() {
   }, [selectedMode, players]);
 
   // Calculate ranks (handling ties based on current sort)
-  const getDisplayRank = (index: number): number => {
-    if (index === 0) return 1;
-    
-    if (selectedMode === 'overall') {
-      // For overall, rank by points
-      let rank = 1;
-      for (let i = 0; i < index; i++) {
-        if (filteredPlayers[i]._points !== filteredPlayers[i + 1]?._points) {
-          rank = i + 2;
+  const getDisplayRank = useMemo(() => {
+    const result: number[] = [];
+    let rank = 1;
+
+    for (let i = 0; i < filteredPlayers.length; i++) {
+      if (i > 0) {
+        const prev = filteredPlayers[i - 1];
+        const curr = filteredPlayers[i];
+
+        if (selectedMode === 'overall') {
+          if (curr._points !== prev._points) {
+            rank = i + 1;
+          }
+        } else {
+          const prevTier = prev[selectedMode]?.toUpperCase() || 'U';
+          const currTier = curr[selectedMode]?.toUpperCase() || 'U';
+
+          if (
+            prevTier !== currTier ||
+            prev._points !== curr._points
+          ) {
+            rank = i + 1;
+          }
         }
       }
-      return rank;
-    } else {
-      // For mode-specific, rank by tier then points
-      let rank = 1;
-      for (let i = 0; i < index; i++) {
-        const currentTier = filteredPlayers[i][selectedMode]?.toUpperCase() || 'U';
-        const nextTier = filteredPlayers[i + 1]?.[selectedMode]?.toUpperCase() || 'U';
-        const currentPoints = filteredPlayers[i]._points;
-        const nextPoints = filteredPlayers[i + 1]?._points;
-        
-        if (currentTier !== nextTier || currentPoints !== nextPoints) {
-          rank = i + 2;
-        }
-      }
-      return rank;
+      result.push(rank);
     }
-  };
+
+    return result;
+  }, [filteredPlayers, selectedMode]);
+
 
   if (loading) {
     return (
@@ -207,9 +210,9 @@ export default function TierList() {
       <div>
         {filteredPlayers.map((player, index) => (
           <PlayerRow
-            key={player.uuid}
+            key={player.uuid || `${player.username}-${index}`}
             player={player}
-            rank={getDisplayRank(index)}
+            rank={getDisplayRank[index]}
           />
         ))}
       </div>

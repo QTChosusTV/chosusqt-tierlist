@@ -17,7 +17,7 @@ export default function TierCell({ mode, tier }: TierCellProps) {
       alignItems: 'center',
       gap: '6px',
       position: 'relative',
-      margin: '10px'
+      margin: '15px'
     }}
     className="group">
       {/* Tooltip */}

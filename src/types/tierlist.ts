@@ -1,3 +1,4 @@
+// tierlist.ts
 export type TierType = 'LT6' | 'HT6' | 'LT5' | 'HT5' | 'LT4' | 'HT4' | 'LT3' | 'HT3' | 'LT2' | 'HT2' | 'LT1' | 'HT1' | 'U';
 
 export type ModeKey = 'axe' | 'smp' | 'sword' | 'mace' | 'uhc' | 'nethop' | 'vanilla' | 'diapot';
@@ -6,6 +7,8 @@ export interface Mode {
   key: ModeKey;
   icon: string;
 }
+
+export type FilterMode = ModeKey | 'overall';
 
 export interface Player {
   uuid: string;

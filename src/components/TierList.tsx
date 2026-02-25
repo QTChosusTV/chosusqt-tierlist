@@ -272,7 +272,7 @@ export default function TierList() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filteredPlayers.map((player, index) => {
-          const key = player.uuid || `${player.username}`;
+          const key = player.uuid || `${player.username}  `;
 
           return (
             <div

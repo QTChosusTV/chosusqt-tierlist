@@ -19,18 +19,18 @@ const TIER_ORDER: Record<string, number> = {
 };
 
 const TIER_INFO = [
-  { tier: 'LT6', label: 'Lowest Tier 6', color: '#444444' },
-  { tier: 'HT6', label: 'High Tier 6', color: '#777777' },
-  { tier: 'LT5', label: 'Low Tier 5', color: '#aaaaaa' },
-  { tier: 'HT5', label: 'High Tier 5', color: '#00ff00' },
-  { tier: 'LT4', label: 'Low Tier 4', color: '#00ffff' },
-  { tier: 'HT4', label: 'High Tier 4', color: '#5588ff' },
-  { tier: 'LT3', label: 'Low Tier 3', color: '#ff00ff' },
-  { tier: 'HT3', label: 'High Tier 3', color: '#ffcc55' },
-  { tier: 'LT2', label: 'Low Tier 2', color: '#ff7575' },
-  { tier: 'HT2', label: 'High Tier 2', color: '#ff0000' },
-  { tier: 'LT1', label: 'Low Tier 1', color: '#8b0000' },
-  { tier: 'HT1', label: 'GOAT', color: '#ffffff' },
+  { tier: 'LT6', label: '+1', color: '#444444' },
+  { tier: 'HT6', label: '+2', color: '#777777' },
+  { tier: 'LT5', label: '+3', color: '#aaaaaa' },
+  { tier: 'HT5', label: '+5', color: '#00ff00' },
+  { tier: 'LT4', label: '+10', color: '#00ffff' },
+  { tier: 'HT4', label: '+20', color: '#5588ff' },
+  { tier: 'LT3', label: '+50', color: '#ff00ff' },
+  { tier: 'HT3', label: '+100', color: '#ffcc55' },
+  { tier: 'LT2', label: '+250', color: '#ff7575' },
+  { tier: 'HT2', label: '+1000', color: '#ff0000' },
+  { tier: 'LT1', label: '+2500', color: '#8b0000' },
+  { tier: 'HT1', label: '+10000', color: '#ffffff' },
 ];
 
 export default function TierList() {
@@ -266,7 +266,22 @@ export default function TierList() {
             backdropFilter: 'blur(6px)'
           }}
         >
-          ℹ️ Info
+          Tiers info
+        </button>
+        <button
+          onClick={() => { window.location.href = '/history'; }}
+          style={{
+            padding: '10px 16px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.05)',
+            color: '#fff',
+            cursor: 'pointer',
+            fontWeight: 600,
+            backdropFilter: 'blur(6px)'
+          }}
+        >
+          Testing history
         </button>
       </div>
 
@@ -296,42 +311,148 @@ export default function TierList() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 999
+            
           }}
         >
           <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: 420,
-              maxWidth: '90%',
-              background: 'linear-gradient(180deg, #121212, #0b0b0b)',
-              borderRadius: 16,
-              padding: 24,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-              color: '#fff'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 22 }}>Tier Explanation</h2>
-              <button onClick={() => setShowInfo(false)} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 20, cursor: 'pointer' }}>
-                ✕
-              </button>
-            </div>
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 860,
+                maxWidth: '95%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                background: 'linear-gradient(180deg, #121212, #0b0b0b)',
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                color: '#fff',
+                scrollbarWidth: 'none'
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h2 style={{ margin: 0, fontSize: 22 }}>Tiers Info</h2>
+                <button onClick={() => setShowInfo(false)} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: 20, cursor: 'pointer' }}>✕</button>
+              </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {TIER_INFO.map(t => (
-                <div key={t.tier} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.04)' }}>
-                  <div style={{ width: 46, textAlign: 'center', fontWeight: 800, color: t.color }}>{t.tier}</div>
-                  <div style={{ flex: 1, height: 8, borderRadius: 999, background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
-                  <div style={{ fontSize: 14, opacity: 0.85 }}>{t.label}</div>
+              {/* Two columns side by side */}
+              <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+                {/* LEFT — tier score list */}
+                <div style={{ flex: '0 0 200px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 4 }}>Score per tier</div>
+                  {TIER_INFO.slice().reverse().map(t => (
+                    <div key={t.tier} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)' }}>
+                      <div style={{ width: 40, textAlign: 'center', fontWeight: 800, color: t.color, fontSize: 13 }}>{t.tier}</div>
+                      <div style={{ flex: 1, height: 6, borderRadius: 999, background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
+                      <div style={{ color: t.color, fontSize: 15, fontWeight: 900, filter: 'brightness(1.5) saturate(2)', minWidth: 52, textAlign: 'right' }}>{t.label}</div>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 8, fontSize: 12, opacity: 0.4, textAlign: 'center' }}>Lower → Higher skill</div>
                 </div>
-              ))}
-            </div>
 
-            <div style={{ marginTop: 14, fontSize: 13, opacity: 0.6, textAlign: 'center' }}>
-              Lower → Higher skill progression
+                {/* RIGHT — rules */}
+                <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                  {/* LT3- */}
+                  <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: '#ff00ff' }}>LT3 and below</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Placement</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>
+                      Evaluated by a tester of known tier <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>T</span>. All matches are FT7.
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Combat</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                      {[
+                        { score: '7 – 0', result: 'T − 4' },
+                        { score: '7 – 1', result: 'T − 3' },
+                        { score: '7 – 2 / 7 – 3', result: 'T − 2' },
+                        { score: '7 – 4 / 7 – 5', result: 'T − 1' },
+                        { score: '7 – 6+', result: 'T' },
+                      ].map(row => (
+                        <div key={row.score} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.65)', fontSize: 13, minWidth: 110 }}>{row.score}</span>
+                          <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>→</span>
+                          <span style={{ fontWeight: 800, color: '#ff00ff', fontSize: 13 }}>{row.result}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Stat-based modes (% difference)</div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Damage', rows: ['85%', '60%', '40%', '25%', '−10%'] },
+                        { label: 'Durability', rows: ['90%', '75%', '55%', '25%', '−20%'] },
+                        { label: 'Potion', rows: ['90%', '80%', '65%', '35%', '−20%'] },
+                      ].map(col => (
+                        <div key={col.label} style={{ flex: 1, minWidth: 80, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 7 }}>{col.label}</div>
+                          {col.rows.map((threshold, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{'>'}{threshold}</span>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: '#ff00ff' }}>T−{4 - i || 0}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* HT3+ */}
+                  <div style={{ borderRadius: 12, background: 'rgba(255,204,85,0.04)', border: '1px solid rgba(255,204,85,0.15)', padding: '16px 18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: '#ffcc55' }}>HT3 and above</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Promotion System</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
+                      Current tier = <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>X</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Opponent Weights</div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Same tier', weight: '×1' },
+                        { label: 'X + 1', weight: '×2.5' },
+                        { label: 'X + 2', weight: '×7.5' },
+                      ].map(w => (
+                        <div key={w.label} style={{ flex: 1, minWidth: 70, background: 'rgba(255,204,85,0.06)', border: '1px solid rgba(255,204,85,0.12)', borderRadius: 8, padding: '8px 12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{w.label}</div>
+                          <div style={{ fontWeight: 900, fontSize: 16, color: '#ffcc55' }}>{w.weight}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Promotion Requirements</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                      {['Defeat all assigned opponents', 'Total accumulated weight ≥ 3', 'Skill score ≥ 3'].map((req, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: '#4ade80', fontSize: 12 }}>✓</span>
+                          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{req}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Penalties</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {[
+                        { cond: 'Loss vs same tier', val: '−1', color: '#ff5555' },
+                        { cond: 'Loss vs higher tier', val: 'reduced', color: '#ffaa55' },
+                        { cond: 'Loss vs lower tier', val: 'increased', color: '#ff3333' },
+                        { cond: 'Skill score < −3', val: 'Demotion', color: '#ff3333' },
+                        { cond: 'HT1 loses validation', val: '→ LT1', color: '#ff3333' },
+                      ].map((p, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{p.cond}</span>
+                          <span style={{ fontWeight: 800, fontSize: 12, color: p.color, whiteSpace: 'nowrap' }}>{p.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
-          </div>
+          
         </div>
+        
       )}
     </div>
   );

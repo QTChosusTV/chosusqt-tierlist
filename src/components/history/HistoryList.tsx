@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { MODES } from '@/types/tierlist';
+import { i } from 'framer-motion/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,11 +63,11 @@ function isHighTest(tier: string): boolean {
 }
 
 function getKeyword(oldTier: string, newTier: string): string {
-  if (!oldTier || oldTier.trim() === '') return 'Initial tier set';
+  if (!oldTier || oldTier.trim() === '') return 'Initial tier set to';
   const o = tierIdx(oldTier);
   const n = tierIdx(newTier);
-  if (n > o) return 'Promoted';
-  if (n < o) return 'Demoted';
+  if (n > o) return 'Promoted to';
+  if (n < o) return 'Demoted to';
   return 'Retained';
 }
 
@@ -124,36 +125,53 @@ function ModeIcon({ modeKey, size = 18 }: { modeKey: string; size?: number }) {
 function TierBadge({ tier }: { tier: string }) {
   if (!tier || tier.trim() === '' || tier.toUpperCase() === 'U') return null;
   const color = getTierColor(tier);
+  const isHigh = tierIdx(tier) >= tierIdx('HT3');
+
   return (
-    <span
-      style={{
-        color,
-        fontWeight: 800,
-        fontSize: 12,
-        border: `1.5px solid ${color}`,
-        borderRadius: 6,
-        padding: '2px 7px',
-        background: `${color}18`,
-        letterSpacing: '0.5px',
-        display: 'inline-block',
-        whiteSpace: 'nowrap',
-        lineHeight: '1.4',
-      }}
-    >
-      {tier.toUpperCase()}
-    </span>
+    <>
+      {isHigh && (
+        <style>{`
+          @keyframes badge-glow {
+            0%, 100% { box-shadow: 0 0 5px 1px ${color}99; }
+            50%       { box-shadow: 0 0 6px 2px ${color}cc; }
+          }
+        `}</style>
+      )}
+      <span
+        style={{
+          color,
+          fontWeight: 800,
+          fontSize: 12,
+          border: `${isHigh ? 2 : 1}px solid ${color}`,
+          borderRadius: 6,
+          padding: '2px 7px',
+          background: isHigh ? `${color}30` : `${color}18`,
+          letterSpacing: '0.5px',
+          display: 'inline-block',
+          whiteSpace: 'nowrap',
+          lineHeight: '1.4',
+          animation: isHigh ? 'badge-glow 2s ease-in-out infinite' : undefined,
+          textShadow: isHigh ? `0 0 8px ${color}` : undefined,
+        }}
+      >
+        {tier.toUpperCase()}
+      </span>
+    </>
   );
 }
 
 function PlayerChip({
-  username, uuid, tier, size = 36,
-}: { username: string; uuid?: string; tier?: string; size?: number }) {
+  username, uuid, tier, size = 36, isTester
+}: { username: string; uuid?: string; tier?: string; size?: number; isTester?: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <PlayerAvatar username={username} uuid={uuid} size={size} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{ fontWeight: 700, color: 'white', fontSize: 14, lineHeight: 1 }}>
-          {username}
+          {username} 
+          <div style={{color: (isTester? 'rgba(219, 0, 253, 1)' : 'white')}}>
+            {(isTester? "(Tester)" : "(Test-taker)")}
+          </div>
         </span>
         {tier && tier.trim() !== '' && tier.toUpperCase() !== 'U' && (
           <TierBadge tier={tier} />
@@ -199,14 +217,14 @@ function NormalTestCard({
 
       {/* Players */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-        <PlayerChip username={entry.tester} uuid={testerPlayer?.uuid} tier={testerTier} size={44} />
+        <PlayerChip username={entry.tester} uuid={testerPlayer?.uuid} tier={testerTier} size={44} isTester={true} />
         <span style={{ color: 'rgba(255,255,255,0.2)', fontWeight: 700, fontSize: 18 }}>vs</span>
-        <PlayerChip username={entry.tested} uuid={testedPlayer?.uuid} tier={testedTier} size={44} />
+        <PlayerChip username={entry.tested} uuid={testedPlayer?.uuid} tier={testedTier} size={44} isTester={false}/>
       </div>
 
       {/* Mode + tier change */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <ModeIcon modeKey={entry.mode} size={16} />
+        <ModeIcon modeKey={entry.mode} size={40} />
         <span
           style={{
             fontSize: 12,
@@ -330,7 +348,7 @@ function HighTestCard({
 
       {/* Mode + tier result */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <ModeIcon modeKey={entry.mode} size={16} />
+        <ModeIcon modeKey={entry.mode} size={30} />
         <span
           style={{
             fontSize: 12,
@@ -466,7 +484,7 @@ export default function HistoryList() {
       try {
         setLoading(true);
         const [historyRes, tiersRes] = await Promise.all([
-          supabase.from('history').select('*').order('time', { ascending: false }),
+          supabase.from('history').select('*').order('time', { ascending: false }).limit(100),
           supabase.from('tiers').select('*'),
         ]);
         if (historyRes.error) throw historyRes.error;
@@ -529,6 +547,24 @@ export default function HistoryList() {
   return (
     <div style={{ maxWidth: 860, margin: '40px auto', padding: '0 24px' }}>
       {title}
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: -30, marginBottom: 20 }}>
+        <button
+            onClick={() => { window.location.href = '/'; }}
+            style={{
+            padding: '10px 16px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.05)',
+            color: '#fff',
+            cursor: 'pointer',
+            fontWeight: 600,
+            backdropFilter: 'blur(6px)'
+          }}
+        >
+          Home
+        </button>
+      </div>
 
       {/* Glow keyframe — shared by all HT3+ rows via CSS custom property */}
       <style>{`
@@ -621,7 +657,7 @@ export default function HistoryList() {
                         tested by {entry.tester}
                       </span>
                       <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12 }}>·</span>
-                      <ModeIcon modeKey={entry.mode} size={13} />
+                      <ModeIcon modeKey={entry.mode} size={25} />
                       <span
                         style={{
                           fontSize: 12,
@@ -667,9 +703,9 @@ export default function HistoryList() {
           // ── Normal row (LT3 and below) ────────────────────────────────────
           const keyword = getKeyword(entry.old_tier, entry.new_tier);
           const kwColor =
-            keyword === 'Promoted'
+            keyword === 'Promoted to'
               ? '#4ade80'
-              : keyword === 'Demoted'
+              : keyword === 'Demoted to'
               ? '#ff5555'
               : keyword === 'Retained'
               ? '#ffcc55'
@@ -714,10 +750,9 @@ export default function HistoryList() {
                     {entry.tested}
                   </span>
                   <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
-                  <ModeIcon modeKey={entry.mode} size={16} />
+                  <ModeIcon modeKey={entry.mode} size={25} />
                   <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
                   <span style={{ fontWeight: 700, color: kwColor, fontSize: 13 }}>{keyword}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>to</span>
                   <TierBadge tier={entry.new_tier} />
                 </div>
 
@@ -734,7 +769,7 @@ export default function HistoryList() {
                 <span
                   style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12, flexShrink: 0 }}
                 >
-                  {isOpen ? '▲' : '▼'}
+                  {isOpen ? '▴' : '▾'}
                 </span>
               </div>
 

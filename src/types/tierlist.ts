@@ -30,17 +30,17 @@ export interface PlayerWithPoints extends Player {
 
 export const TIER_POINT_MAP: Record<string, number> = {
   LT6: 1,
-  HT6: 4,
-  LT5: 9,
-  HT5: 16,
-  LT4: 25,
-  HT4: 36,
-  LT3: 49,
-  HT3: 64,
-  LT2: 81,
-  HT2: 100,
-  LT1: 121,
-  HT1: 144
+  HT6: 2,
+  LT5: 3,
+  HT5: 5,
+  LT4: 10,
+  HT4: 20,
+  LT3: 50,
+  HT3: 100,
+  LT2: 250,
+  HT2: 1000,
+  LT1: 2500,
+  HT1: 10000
 };
 
 export const MODES: Mode[] = [

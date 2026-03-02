@@ -32,15 +32,15 @@ export const TIER_POINT_MAP: Record<string, number> = {
   LT6: 1,
   HT6: 2,
   LT5: 3,
-  HT5: 5,
-  LT4: 10,
-  HT4: 20,
-  LT3: 50,
-  HT3: 100,
-  LT2: 250,
-  HT2: 1000,
-  LT1: 2500,
-  HT1: 10000
+  HT5: 4,
+  LT4: 5,
+  HT4: 7,
+  LT3: 10,
+  HT3: 25,
+  LT2: 50,
+  HT2: 100,
+  LT1: 250,
+  HT1: 1000
 };
 
 export const MODES: Mode[] = [

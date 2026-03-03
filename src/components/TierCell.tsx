@@ -1,3 +1,4 @@
+// TierCell.tsx
 import { TIER_POINT_MAP } from '@/types/tierlist';
 import type { Mode, TierType } from '@/types/tierlist';
 import Image from 'next/image';

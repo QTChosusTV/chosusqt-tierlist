@@ -1,3 +1,4 @@
+// utils.ts
 import { TIER_POINT_MAP, MODES } from '@/types/tierlist';
 import type { Player, PlayerWithPoints } from '@/types/tierlist';
 

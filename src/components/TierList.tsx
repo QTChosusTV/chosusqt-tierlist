@@ -1,3 +1,4 @@
+// TierList.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -5,9 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { addPointsToPlayers, sortPlayersByPoints } from '@/lib/utils';
 import PlayerRow from './PlayerRow';
 import ModeFilter, { FilterMode } from './ModeFilter';
+import SearchBar from './SearchBar';
 import type { Player, PlayerWithPoints, TierType } from '@/types/tierlist';
 
-// Tier order for sorting (best to worst)
 const TIER_ORDER: Record<string, number> = {
   HT1: 1, LT1: 2,
   HT2: 3, LT2: 4,
@@ -44,7 +45,6 @@ export default function TierList() {
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
   const capturedPositions = useRef<Map<string, DOMRect> | null>(null);
 
-  // Fetch players
   useEffect(() => {
     async function fetchPlayers() {
       try {
@@ -67,32 +67,27 @@ export default function TierList() {
     fetchPlayers();
   }, []);
 
-  // STEP 1: When mode change is requested, capture current positions
   const handleModeChange = (newMode: FilterMode) => {
-    console.log('🔵 STEP 1: Capturing positions for mode change to:', newMode);
+    // console.log(' STEP 1: Capturing positions for mode change to:', newMode);
     
-    // Capture positions BEFORE any state change
     const positions = new Map<string, DOMRect>();
     rowRefs.current.forEach((el, key) => {
       if (el) {
         const rect = el.getBoundingClientRect();
         positions.set(key, rect);
-        console.log(`  📍 Captured OLD position for ${key}:`, { top: rect.top, left: rect.left });
+        // console.log(`   Captured OLD position for ${key}:`, { top: rect.top, left: rect.left });
       }
     });
     
-    console.log(`  ✅ Captured ${positions.size} positions`);
+    // console.log(`   Captured ${positions.size} positions`);
     
-    // Store positions in ref (not state!)
     capturedPositions.current = positions;
     
-    // Update mode
     setSelectedMode(newMode);
   };
 
-  // STEP 2: Update filtered players based on selected mode
   useEffect(() => {
-    console.log('🟡 STEP 2: Updating filteredPlayers for mode:', selectedMode);
+    // console.log(' STEP 2: Updating filteredPlayers for mode:', selectedMode);
     
     if (selectedMode === 'overall') {
       setFilteredPlayers(players);
@@ -112,56 +107,52 @@ export default function TierList() {
     }
   }, [selectedMode, players]);
 
-  // STEP 3: After filteredPlayers updates, animate if we have captured positions
   useEffect(() => {
-    console.log('🟣 STEP 3: Animation effect triggered');
-    console.log('  capturedPositions exists?', capturedPositions.current !== null);
-    console.log('  capturedPositions size:', capturedPositions.current?.size || 0);
+    // console.log('  STEP 3: Animation effect triggered');
+    // console.log('  capturedPositions exists?', capturedPositions.current !== null);
+    // console.log('  capturedPositions size:', capturedPositions.current?.size || 0);
     
     if (!capturedPositions.current || capturedPositions.current.size === 0) {
-      console.log('  ❌ No captured positions, skipping animation');
+      // console.log('  No captured positions, skipping animation');
       return;
     }
 
-    console.log('  🎬 Starting animation...');
+    // console.log('  Starting animation...');
 
-    // Small delay to ensure DOM has updated
     setTimeout(() => {
-      // Get new positions after DOM update
       const newPositions = new Map<string, DOMRect>();
       rowRefs.current.forEach((el, key) => {
         if (el) {
           const rect = el.getBoundingClientRect();
           newPositions.set(key, rect);
-          console.log(`  📍 NEW position for ${key}:`, { top: rect.top, left: rect.left });
+          // console.log(`   NEW position for ${key}:`, { top: rect.top, left: rect.left });
         }
       });
 
-      console.log(`  ✅ Got ${newPositions.size} new positions`);
+      // console.log(`   Got ${newPositions.size} new positions`);
 
       let animationCount = 0;
 
-      // Animate each element
       capturedPositions.current!.forEach((oldRect, key) => {
         const el = rowRefs.current.get(key);
         const newRect = newPositions.get(key);
         
         if (!el || !newRect) {
-          console.log(`  ⚠️ Skipping ${key}: element or new position missing`);
+          // console.log(`   Skipping ${key}: element or new position missing`);
           return;
         }
 
         const deltaX = oldRect.left - newRect.left;
         const deltaY = oldRect.top - newRect.top;
 
-        console.log(`  🔄 ${key} - deltaX: ${deltaX}, deltaY: ${deltaY}`);
+        // console.log(`   ${key} - deltaX: ${deltaX}, deltaY: ${deltaY}`);
 
         if (deltaX === 0 && deltaY === 0) {
-          console.log(`  ⏭️ Skipping ${key}: no movement`);
+          // console.log(`   Skipping ${key}: no movement`);
           return;
         }
 
-        console.log(`  ✨ Animating ${key} from (${deltaX}, ${deltaY}) to (0, 0)`);
+        //console.log(`   Animating ${key} from (${deltaX}, ${deltaY}) to (0, 0)`);
         animationCount++;
 
         el.animate(
@@ -176,15 +167,13 @@ export default function TierList() {
         );
       });
 
-      console.log(`  🎉 Started ${animationCount} animations`);
+      // console.log(`   Started ${animationCount} animations`);
 
-      // Clear the captured positions
       capturedPositions.current = null;
-      console.log('  🧹 Cleared captured positions');
+      // console.log('   Cleared captured positions');
     }, 0);
   }, [filteredPlayers]);
 
-  // Calculate ranks
   const ranks: number[] = [];
   let rank = 1;
   for (let i = 0; i < filteredPlayers.length; i++) {
@@ -201,6 +190,12 @@ export default function TierList() {
     }
     ranks.push(rank);
   }
+
+  const ranksMap = new Map<string, number>();
+  filteredPlayers.forEach((player, index) => {
+    const key = player.uuid || player.username;
+    ranksMap.set(key, ranks[index]);
+  });
 
   function setRowRef(key: string, el: HTMLDivElement | null) {
     if (el) rowRefs.current.set(key, el);
@@ -251,7 +246,7 @@ export default function TierList() {
         ChosusQT&apos;s Tier List
       </h1>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 32 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 32, position: 'relative' }}>
         <ModeFilter selectedMode={selectedMode} onModeChange={handleModeChange} />
         <button
           onClick={() => setShowInfo(true)}
@@ -283,6 +278,11 @@ export default function TierList() {
         >
           Testing history
         </button>
+
+        {/* Search bar pinned to the right */}
+        <div style={{ position: 'absolute', right: 0 }}>
+          <SearchBar players={players} ranks={ranksMap} />
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -358,12 +358,12 @@ export default function TierList() {
                   <div style={{ borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', padding: '16px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <span style={{ fontWeight: 800, fontSize: 14, color: '#ff00ff' }}>LT3 and below</span>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Placement</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Evaluation Placement</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>
-                      Evaluated by a tester of known tier <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>T</span>. All matches are FT7.
+                      Evaluated by a tester of known tier <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>T</span>. All matches are FT7. All stats here are just for reference, the result is still determined by the tester;
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Combat</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', marginBottom: 6 }}>Combat</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
                       {[
                         { score: '7 – 0', result: 'T − 4' },
@@ -403,7 +403,7 @@ export default function TierList() {
                   <div style={{ borderRadius: 12, background: 'rgba(255,204,85,0.04)', border: '1px solid rgba(255,204,85,0.15)', padding: '16px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                       <span style={{ fontWeight: 800, fontSize: 14, color: '#ffcc55' }}>HT3 and above</span>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>Promotion System</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Promotion System</span>
                     </div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
                       Current tier = <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>X</span>

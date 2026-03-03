@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Base styles */
 html,
 body {
   margin: 0;
@@ -14,7 +13,6 @@ body {
   box-sizing: border-box;
 }
 
-/* Custom tier and mode colors */
 .color-axe { color: #4aa3ff !important; }
 .color-sword { color: #4aa3ff !important; }
 .color-smp { color: #8b5a2b !important; }
@@ -24,7 +22,6 @@ body {
 .color-vanilla { color: #b56bff !important; }
 .color-diapot { color: #ff4444 !important; }
 
-/* Tier colors */
 .color-LT6 { color: #444444 !important; }
 .color-HT6 { color: #777777 !important; }
 .color-LT5 { color: #aaaaaa !important; }
@@ -38,7 +35,6 @@ body {
 .color-LT1 { color: #8b0000 !important; }
 .color-HT1 { color: #ffffff !important; }
 
-/* Border colors for tooltips */
 .border-LT6 { border-color: #444444 !important; }
 .border-HT6 { border-color: #777777 !important; }
 .border-LT5 { border-color: #aaaaaa !important; }

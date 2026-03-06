@@ -98,8 +98,13 @@ export default function TesterPage() {
         .update({ is_open: next })
         .eq('id', testerId);
     }
+    // Auto-remove active player when closing
+    if (!next && myActive) {
+      await supabase.from('queue' as any).delete().eq('id', myActive.id);
+      setActiveEntry(null);
+    }
   }
-
+  
   // ── Heartbeat: update last_seen every 30s ─────────────────────────────────
   useEffect(() => {
     if (!testerId) return;

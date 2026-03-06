@@ -135,6 +135,10 @@ export default function QueuePage() {
 
   async function handleJoin() {
     if (!username.trim() || !selectedMode) return;
+    if (onlineTesters.filter(t => t.is_open).length === 0) {
+      setJoinError('No testers are currently open. Please wait.');
+      return;
+    }
     setJoining(true);
     setJoinError(null);
 
@@ -347,12 +351,14 @@ export default function QueuePage() {
 
       {/* ── Floating Join Button ── */}
       {!myEntry && (
-        <button onClick={() => setShowJoin(true)} style={{
+        <button onClick={() => setShowJoin(true)} disabled={onlineTesters.filter(t => t.is_open).length === 0} style={{
+          opacity: onlineTesters.filter(t => t.is_open).length === 0 ? 0.4 : 1,
+          cursor: onlineTesters.filter(t => t.is_open).length === 0 ? 'not-allowed' : 'pointer',
           position: 'fixed', bottom: 32, right: 32,
           padding: '14px 28px', borderRadius: 14,
           background: 'linear-gradient(135deg, #4aa3ff, #b56bff)',
           border: 'none', color: '#fff', fontWeight: 800, fontSize: 16,
-          cursor: 'pointer', boxShadow: '0 8px 32px rgba(74,163,255,0.35)', zIndex: 100,
+          boxShadow: '0 8px 32px rgba(74,163,255,0.35)', zIndex: 100,
         }}>
           + Join Queue
         </button>

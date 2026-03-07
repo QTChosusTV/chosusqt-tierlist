@@ -261,7 +261,7 @@ export default function TierList() {
             backdropFilter: 'blur(6px)'
           }}
         >
-          Tiers info
+          Info
         </button>
         <button
           onClick={() => { window.location.href = '/history'; }}
@@ -276,7 +276,23 @@ export default function TierList() {
             backdropFilter: 'blur(6px)'
           }}
         >
-          Testing history
+          History
+        </button>
+
+        <button
+          onClick={() => { window.location.href = '/queue'; }}
+          style={{
+            padding: '10px 16px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.05)',
+            color: '#fff',
+            cursor: 'pointer',
+            fontWeight: 600,
+            backdropFilter: 'blur(6px)'
+          }}
+        >
+          Test queue (BETA)
         </button>
 
         {/* Search bar pinned to the right */}

@@ -1,5 +1,6 @@
 'use client';
 
+import TestChat from '@/components/TestChat';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -310,7 +311,19 @@ export default function TesterPage() {
             <button onClick={handleSkip} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,85,85,0.3)', background: 'rgba(255,85,85,0.08)', color: '#ff5555', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>✕ Skip</button>
           </div>
         </div>
+
+
       )}
+
+      {myActive && (
+          <div style={{ marginBottom: 28 }}>
+            <TestChat
+              entryId={myActive.id}
+              myName={testerUsername!}
+              otherName={myActive.username}
+            />
+          </div>
+        )}
 
       {!myActive && isOpen && (
         <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>

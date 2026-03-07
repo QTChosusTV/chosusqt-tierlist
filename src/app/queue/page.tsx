@@ -1,5 +1,6 @@
 'use client';
 
+import TestChat from '@/components/TestChat';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -279,12 +280,25 @@ export default function QueuePage() {
               </span>
             )}
           </div>
+          
           <button onClick={handleLeave}
             style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,85,85,0.3)', background: 'rgba(255,85,85,0.08)', color: '#ff5555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
             Leave
           </button>
         </div>
+        
       )}
+
+      {myEntry?.status === 'in_progress' && myEntry.claimed_by && (
+        <div style={{ marginBottom: 24 }}>
+          <TestChat
+            entryId={myEntry.id}
+            myName={username}
+            otherName={myEntry.claimed_by}
+          />
+        </div>
+      )}
+      
 
       {/* ── In Progress ── */}
       {inProgressQueue.length > 0 && (

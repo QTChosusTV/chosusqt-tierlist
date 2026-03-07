@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { MODES } from '@/types/tierlist';
 import type { QueueEntry } from '@/app/queue/page';
+import TierUpdateForm from '@/components/TierUpdateForm';
 
 function PlayerAvatar({ username, size = 32 }: { username: string; size?: number }) {
   return (
@@ -373,7 +374,18 @@ export default function TesterPage() {
             );
           })}
         </div>
+        
       )}
+      
+      <div style={{ marginTop: 32 }}>
+        <TierUpdateForm
+          defaultTester={testerUsername ?? ''}
+          defaultContestant={myActive?.username ?? ''}
+          defaultMode={myActive?.mode ?? ''}
+        />
+      </div>
+
     </div>
+    
   );
 }

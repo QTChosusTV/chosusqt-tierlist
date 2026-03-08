@@ -322,6 +322,25 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
               );
             })}
           </div>
+          {/* History link */}
+          <div
+            onClick={() => { window.location.href = `/history?player=${result.username}`; }}
+            style={{
+              width: '100%', padding: '12px 14px',
+              borderTop: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              cursor: 'pointer', background: 'rgba(255,255,255,0.02)',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(74,163,255,0.08)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+          >
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
+              View test history
+            </span>
+            <span style={{ fontSize: 13, color: '#4aa3ff' }}>→</span>
+          </div>
+
         </div>
       )}
     </div>

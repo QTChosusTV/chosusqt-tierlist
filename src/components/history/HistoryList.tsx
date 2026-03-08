@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -473,6 +474,8 @@ function HighTestCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function HistoryList() {
+  const searchParams = useSearchParams();
+  const playerFilter = searchParams.get('player')?.toLowerCase() ?? null;
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [players, setPlayers] = useState<Map<string, PlayerInfo>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -495,7 +498,15 @@ export default function HistoryList() {
           map.set(p.username.toLowerCase(), p);
         });
 
-        setHistory(historyRes.data as HistoryEntry[]);
+        setHistory(
+          playerFilter
+          ? (historyRes.data as HistoryEntry[]).filter(
+            e =>
+              e.tested.toLowerCase() === playerFilter
+          // || e.tester.toLowerCase() === playerFilter
+          )
+          : (historyRes.data as HistoryEntry[])
+        );
         setPlayers(map);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load history');
@@ -509,18 +520,12 @@ export default function HistoryList() {
   const getPlayer = (username: string) => players.get(username?.toLowerCase());
 
   const title = (
-    <h1
-      style={{
-        fontSize: 42,
-        fontWeight: 900,
-        textAlign: 'center',
-        marginBottom: 40,
-        background: 'linear-gradient(135deg, #4aa3ff, #b56bff, #ff4444)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-      }}
-    >
-      Test History
+    <h1 style={{
+      fontSize: 42, fontWeight: 900, textAlign: 'center', marginBottom: 40,
+      background: 'linear-gradient(135deg, #4aa3ff, #b56bff, #ff4444)',
+      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+    }}>
+      {playerFilter ? `${playerFilter}'s History` : 'Test History'}
     </h1>
   );
 
@@ -564,6 +569,20 @@ export default function HistoryList() {
         >
           Home
         </button>
+        {playerFilter && (
+          <button
+            onClick={() => { window.location.href = '/history'; }}
+            style={{
+              padding: '10px 16px', borderRadius: 10,
+              border: '1px solid rgba(255,85,85,0.3)',
+              background: 'rgba(255,85,85,0.08)',
+              color: '#ff5555', cursor: 'pointer', fontWeight: 600,
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            ✕ Clear filter
+          </button>
+        )}
       </div>
 
       {/* Glow keyframe — shared by all HT3+ rows via CSS custom property */}

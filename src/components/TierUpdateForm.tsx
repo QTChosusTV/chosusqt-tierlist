@@ -43,7 +43,7 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fights, setFights] = useState<Fight[]>([
-    { player1: defaultContestant, player2: defaultTester, score1: '', score2: '', tier1: '', tier2: '' },
+    { player1: defaultTester, player2: defaultContestant, score1: '', score2: '', tier1: '', tier2: '' },
   ]);
 
   // Sync defaults when props change (e.g. new active test)
@@ -51,16 +51,16 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
     setTester(defaultTester);
     setContestant(defaultContestant);
     setMode(defaultMode);
-    setFights([{ player1: defaultContestant, player2: defaultTester, score1: '', score2: '', tier1: '', tier2: '' }]);
+    setFights([{ player1: defaultTester, player2: defaultContestant, score1: '', score2: '', tier1: '', tier2: '' }]);
     setNewTier('');
     setOldTier('');
     setSuccess(false);
     setError(null);
-  }, [defaultTester, defaultContestant, defaultMode]);
+  }, [defaultContestant, defaultTester, defaultMode]);
 
   function addFight() {
     setFights(prev => [...prev, {
-      player1: contestant, player2: tester, score1: '', score2: '', tier1: '', tier2: '',
+      player1: tester, player2: contestant, score1: '', score2: '', tier1: '', tier2: '',
     }]);
   }
 

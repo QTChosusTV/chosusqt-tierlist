@@ -63,6 +63,34 @@ function isHighTest(entry: HistoryEntry): boolean {
   return (entry.test_array?.length ?? 0) > 1;
 }
 
+function nextTier(tier: string): string {
+  const idx = tierIdx(tier);
+
+  if (idx === -1 || idx >= TIER_SCALE.length - 1) {
+    return tier;
+  }
+
+  return TIER_SCALE[idx + 1];
+}
+
+function getTargetTier(entry: HistoryEntry): string {
+  const oldIdx = tierIdx(entry.old_tier);
+  const newIdx = tierIdx(entry.new_tier);
+
+  // Promotion success
+  if (newIdx > oldIdx) {
+    return entry.new_tier;
+  }
+
+  // Promotion fail
+  if (newIdx === oldIdx) {
+    return nextTier(entry.old_tier);
+  }
+
+  // Demotion
+  return entry.old_tier;
+}
+
 function getKeyword(oldTier: string, newTier: string): string {
   if (!oldTier || oldTier.trim() === '') return 'Initial tier set to';
   const o = tierIdx(oldTier);
@@ -654,7 +682,7 @@ export default function HistoryList() {
                         {entry.tested}
                       </span>
                       <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>for</span>
-                      <TierBadge tier={entry.new_tier} />
+                      <TierBadge tier={getTargetTier(entry)} />
                       <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>—</span>
                       <span
                         style={{

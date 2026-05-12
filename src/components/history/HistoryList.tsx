@@ -59,8 +59,8 @@ function tierIdx(tier: string): number {
   return tier ? TIER_SCALE.indexOf(tier.toUpperCase()) : -1;
 }
 
-function isHighTest(tier: string): boolean {
-  return tierIdx(tier) >= tierIdx('HT3');
+function isHighTest(entry: HistoryEntry): boolean {
+  return (entry.test_array?.length ?? 0) > 1;
 }
 
 function getKeyword(oldTier: string, newTier: string): string {
@@ -181,6 +181,7 @@ function PlayerChip({
     </div>
   );
 }
+
 
 // ─── Expanded Cards ───────────────────────────────────────────────────────────
 
@@ -473,6 +474,8 @@ function HighTestCard({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+
+
 export default function HistoryList() {
   const searchParams = useSearchParams();
   const playerFilter = searchParams.get('player')?.toLowerCase() ?? null;
@@ -481,6 +484,8 @@ export default function HistoryList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  
 
   useEffect(() => {
     async function fetchData() {
@@ -595,7 +600,7 @@ export default function HistoryList() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {history.map(entry => {
-          const high = isHighTest(entry.new_tier);
+          const high = isHighTest(entry);
           const isOpen = expanded === entry.time;
           const tierColor = getTierColor(entry.new_tier);
           const testerPlayer = getPlayer(entry.tester);

@@ -1,4 +1,3 @@
-// TierCell.tsx
 import { TIER_POINT_MAP } from '@/types/tierlist';
 import type { Mode, TierType } from '@/types/tierlist';
 import Image from 'next/image';
@@ -8,84 +7,83 @@ interface TierCellProps {
   tier: TierType;
 }
 
+// Original tier color palette preserved exactly
+const TIER_COLORS: Record<string, string> = {
+  HT1: '#ffffff', LT1: '#8b0000',
+  HT2: '#ff0000', LT2: '#ff7575',
+  HT3: '#ffcc55', LT3: '#ff00ff',
+  HT4: '#5588ff', LT4: '#00ffff',
+  HT5: '#00ff00', LT5: '#aaaaaa',
+  HT6: '#777777', LT6: '#444444',
+  U:   '#333333',
+};
+
 export default function TierCell({ mode, tier }: TierCellProps) {
   const isUnranked = tier === 'U';
-  
+  const color = TIER_COLORS[tier] ?? '#555555';
+
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '6px',
-      position: 'relative',
-      margin: '15px'
-    }}
-    className="group">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '5px',
+        position: 'relative',
+        margin: '8px',
+      }}
+      className="group"
+    >
       {/* Tooltip */}
       {!isUnranked && (
-        <div 
-          className={`border-${tier} color-${tier}`}
+        <div
           style={{
             position: 'absolute',
-            bottom: '100%',
+            bottom: 'calc(100% + 10px)',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: '#1a1a24',
-            borderWidth: '2px',
-            borderStyle: 'solid',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            marginBottom: '16px',
+            background: '#0f0f14',
+            border: `1.5px solid ${color}`,
+            borderRadius: 0, // sharp
+            padding: '10px 14px',
             opacity: 0,
             pointerEvents: 'none',
-            transition: 'opacity 0.2s ease',
+            transition: 'opacity 0.15s ease',
             whiteSpace: 'nowrap',
             zIndex: 100,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
+            boxShadow: `0 4px 20px rgba(0,0,0,0.7), 0 0 12px ${color}30`,
+            color,
           }}
         >
-          <div style={{
-            fontSize: '14px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            marginBottom: '4px'
-          }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3, opacity: 0.6, color: 'rgba(255,255,255,0.5)' }}>
             {mode.key.toUpperCase()}
           </div>
-          <div style={{
-            fontSize: '16px',
-            fontWeight: 800,
-            marginBottom: '4px'
-          }}>
+          <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 2 }}>
             Tier {tier}
           </div>
-          <div style={{
-            fontSize: '13px',
-            opacity: 0.8
-          }}>
-            {TIER_POINT_MAP[tier]} points
+          <div style={{ fontSize: 12, opacity: 0.7, color: 'rgba(255,255,255,0.6)' }}>
+            +{TIER_POINT_MAP[tier]} pts
           </div>
         </div>
       )}
 
-      {/* Icon */}
-      <div 
-        className={`color-${mode.key} ${isUnranked ? '' : `color-${tier}`}`}
+      {/* Icon circle — sharp border, original tier color */}
+      <div
         style={{
-          width: '54px',
-          height: '54px',
-          borderRadius: '50%',
+          width: 54,
+          height: 54,
+          borderRadius: 0, // SHARP — key change
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '26px',
-          fontWeight: 800,
           borderWidth: '2px',
           borderStyle: 'solid',
-          borderColor: 'currentColor',
-          boxShadow: 'inset 0 0 12px rgba(255,255,255,0.25)',
+          borderColor: isUnranked ? 'rgba(255,255,255,0.08)' : color,
+          background: isUnranked ? 'transparent' : `${color}12`,
+          boxShadow: isUnranked ? 'none' : `inset 0 0 10px ${color}20`,
           overflow: 'hidden',
-          opacity: isUnranked ? 0.1 : 1
+          opacity: isUnranked ? 0.12 : 1,
+          transition: 'box-shadow 0.15s ease',
         }}
       >
         <Image
@@ -96,27 +94,32 @@ export default function TierCell({ mode, tier }: TierCellProps) {
           style={{
             width: '70%',
             height: '70%',
-            objectFit: 'contain'
+            objectFit: 'contain',
+            filter: isUnranked ? 'grayscale(1)' : `drop-shadow(0 0 4px ${color}80)`,
           }}
         />
       </div>
 
-      {/* Tier Text */}
-      <div 
-        className={`${isUnranked ? '' : `color-${tier}`}`}
+      {/* Tier label */}
+      <div
         style={{
-          fontSize: '13px',
+          fontSize: 12,
           fontWeight: 700,
-          letterSpacing: '0.4px',
-          opacity: isUnranked ? 0.1 : 1
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: isUnranked ? 'transparent' : color,
+          textShadow: isUnranked ? 'none' : `0 0 8px ${color}60`,
         }}
       >
-        {isUnranked ? '' : tier}
+        {isUnranked ? '\u00a0' : tier}
       </div>
 
       <style jsx>{`
         .group:hover > div:first-child {
           opacity: 1 !important;
+        }
+        .group:hover > div:nth-child(2) {
+          box-shadow: inset 0 0 14px ${color}40, 0 0 8px ${color}30 !important;
         }
       `}</style>
     </div>

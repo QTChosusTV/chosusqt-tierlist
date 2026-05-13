@@ -207,7 +207,7 @@ export default function PlayerRow({ player, rank, selectedMode }: PlayerRowProps
           textShadow: rank <= 3 ? `0 0 2px ${rColor}80` : 'none',
         }}
       >
-        #{rank}
+        #{player._points > 0? rank : '-'}
       </div>
 
       {/* Avatar */}

@@ -82,7 +82,7 @@ export default function PlayerRow({ player, rank, selectedMode }: PlayerRowProps
           color: rColor,
           textAlign: 'left',
           boxSizing: 'border-box',
-          textShadow: rank <= 3 ? `0 0 12px ${rColor}80` : 'none',
+          textShadow: rank <= 3 ? `0 0 2px ${rColor}80` : 'none',
         }}
       >
         #{rank}

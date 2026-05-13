@@ -155,14 +155,35 @@ export default function TierList() {
   if (loading) {
     return (
       <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>
-        <h1 style={{
-          fontSize: 48, fontWeight: 900, textAlign: 'center', marginBottom: 40,
-          background: 'linear-gradient(135deg, #4aa3ff, #b56bff, #ff4444)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>
-          ChosusQT&apos;s Tier List
-        </h1>
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 18 }}>Loading...</div>
+        {/* ── Title ── */}
+        <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative' }}>
+          {/* decorative top line */}
+          <div style={{
+            width: 120, height: 1,
+            background: 'linear-gradient(90deg, transparent, #b56bff, transparent)',
+            margin: '0 auto 16px',
+          }} />
+
+          <h1 style={{
+            fontSize: 42,
+            fontWeight: 900,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            margin: 0,
+            background: 'linear-gradient(135deg, #4aa3ff 0%, #b56bff 50%, #ff4444 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            ChosusQT&apos;s Tier List
+          </h1>
+
+          {/* decorative bottom line */}
+          <div style={{
+            width: 120, height: 1,
+            background: 'linear-gradient(90deg, transparent, #4aa3ff, transparent)',
+            margin: '16px auto 0',
+          }} />
+        </div>
       </div>
     );
   }
@@ -291,7 +312,7 @@ export default function TierList() {
           Score
         </div>
         {MODES.map((mode: Mode) => (
-          <div key={mode.key} style={{ display: 'flex', justifyContent: 'center' }}>
+          <div key={mode.key} style={{ display: 'flex', gap: '10px', marginLeft: '27.5px'}}>
             <Image
               src={mode.icon}
               alt={mode.key}

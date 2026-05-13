@@ -6,22 +6,14 @@ import { MODES, TIER_POINT_MAP } from '@/types/tierlist';
 import type { PlayerWithPoints, TierType, ModeKey } from '@/types/tierlist';
 
 const TIER_ORDER: Record<string, number> = {
-  HT1: 1, LT1: 2,
-  HT2: 3, LT2: 4,
-  HT3: 5, LT3: 6,
-  HT4: 7, LT4: 8,
-  HT5: 9, LT5: 10,
-  HT6: 11, LT6: 12,
-  U: 13,
+  HT1: 1, LT1: 2, HT2: 3, LT2: 4, HT3: 5, LT3: 6,
+  HT4: 7, LT4: 8, HT5: 9, LT5: 10, HT6: 11, LT6: 12, U: 13,
 };
 
 const TIER_COLORS: Record<string, string> = {
-  HT1: '#ffffff', LT1: '#8b0000',
-  HT2: '#ff0000', LT2: '#ff7575',
-  HT3: '#ffcc55', LT3: '#ff00ff',
-  HT4: '#5588ff', LT4: '#00ffff',
-  HT5: '#00ff00', LT5: '#aaaaaa',
-  HT6: '#777777', LT6: '#444444',
+  HT1: '#ffffff', LT1: '#8b0000', HT2: '#ff0000', LT2: '#ff7575',
+  HT3: '#ffcc55', LT3: '#ff00ff', HT4: '#5588ff', LT4: '#00ffff',
+  HT5: '#00ff00', LT5: '#aaaaaa', HT6: '#777777', LT6: '#444444',
   U: '#333333',
 };
 
@@ -39,11 +31,12 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close card when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node) &&
-          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+      if (
+        cardRef.current && !cardRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
+      ) {
         setResult(null);
         setNotFound(false);
       }
@@ -55,20 +48,14 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
   function handleSearch() {
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) return;
-
     setLoading(true);
     setResult(null);
     setNotFound(false);
     setModelLoaded(false);
-
-    // Simulate slight delay so spinner is visible, then search locally
     setTimeout(() => {
       const found = players.find(p => p.username.toLowerCase() === trimmed);
-      if (found) {
-        setResult(found);
-      } else {
-        setNotFound(true);
-      }
+      if (found) setResult(found);
+      else setNotFound(true);
       setLoading(false);
     }, 300);
   }
@@ -77,7 +64,6 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
     if (e.key === 'Enter') handleSearch();
   }
 
-  // Sort tiers: highest to lowest, ties keep MODES order
   const sortedModes = result
     ? [...MODES].sort((a, b) => {
         const aTier = (result[a.key as ModeKey]?.toUpperCase() || 'U') as TierType;
@@ -90,8 +76,8 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Search Input */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Search row — input + button, no gap, shared border */}
+      <div style={{ display: 'flex' }}>
         <input
           ref={inputRef}
           value={query}
@@ -99,37 +85,39 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
           onKeyDown={handleKeyDown}
           placeholder="Search player..."
           style={{
-            padding: '10px 16px',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(255,255,255,0.05)',
+            padding: '9px 14px',
+            borderRadius: 0,
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRight: 'none',
+            background: 'rgba(255,255,255,0.04)',
             color: '#fff',
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 500,
             outline: 'none',
-            width: 200,
-            backdropFilter: 'blur(6px)',
-            transition: 'border-color 0.2s',
+            width: 190,
+            transition: 'border-color 0.15s',
           }}
-          onFocus={e => e.target.style.borderColor = 'rgba(74,163,255,0.6)'}
-          onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+          onFocus={e => (e.target.style.borderColor = 'rgba(74,163,255,0.5)')}
+          onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.12)')}
         />
         <button
           onClick={handleSearch}
           style={{
-            padding: '10px 14px',
-            borderRadius: 10,
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(74,163,255,0.15)',
+            padding: '9px 16px',
+            borderRadius: 0,
+            border: '1px solid rgba(74,163,255,0.4)',
+            background: 'rgba(74,163,255,0.12)',
             color: '#4aa3ff',
             cursor: 'pointer',
             fontWeight: 700,
-            fontSize: 14,
-            backdropFilter: 'blur(6px)',
-            transition: 'background 0.2s',
+            fontSize: 12,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            transition: 'background 0.15s, color 0.15s',
+            whiteSpace: 'nowrap',
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(74,163,255,0.28)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(74,163,255,0.15)')}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(74,163,255,0.25)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(74,163,255,0.12)'; e.currentTarget.style.color = '#4aa3ff'; }}
         >
           Search
         </button>
@@ -138,24 +126,18 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
       {/* Spinner */}
       {loading && (
         <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 12px)',
-          right: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px 32px',
-          background: '#14141a',
-          borderRadius: 16,
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '18px 28px',
+          background: '#0f0f14',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
           zIndex: 200,
         }}>
           <div style={{
-            width: 28,
-            height: 28,
-            border: '3px solid rgba(255,255,255,0.1)',
-            borderTop: '3px solid #4aa3ff',
+            width: 22, height: 22,
+            border: '2px solid rgba(255,255,255,0.08)',
+            borderTop: '2px solid #4aa3ff',
             borderRadius: '50%',
             animation: 'spin 0.7s linear infinite',
           }} />
@@ -163,72 +145,50 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
         </div>
       )}
 
-      {/* Not Found Message */}
+      {/* Not found */}
       {notFound && (
         <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 12px)',
-          right: 0,
-          padding: '14px 20px',
-          background: '#1a1010',
-          borderRadius: 14,
-          border: '1px solid rgba(255,80,80,0.3)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
-          color: '#ff6b6b',
-          fontWeight: 600,
-          fontSize: 14,
-          zIndex: 200,
-          whiteSpace: 'nowrap',
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          padding: '12px 18px',
+          background: '#0f0f14',
+          border: '1px solid rgba(255,85,85,0.3)',
+          borderLeft: '3px solid #ff5555',
+          color: '#ff6b6b', fontWeight: 600, fontSize: 13,
+          zIndex: 200, whiteSpace: 'nowrap',
         }}>
           Player &quot;{query}&quot; not found.
         </div>
       )}
 
-      {/* Result Card */}
+      {/* Result card */}
       {result && (
         <div
           ref={cardRef}
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 12px)',
-            right: 0,
-            width: 320,
-            background: 'linear-gradient(180deg, #1a1a24, #0f0f14)',
-            borderRadius: 18,
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+            width: 300,
+            background: '#0f0f14',
             border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
             overflow: 'hidden',
             zIndex: 200,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
           }}
         >
-          {/* Player Model */}
+          {/* 3D model area */}
           <div style={{
             width: '100%',
-            background: 'linear-gradient(180deg, #1e1e2e, #16161f)',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            paddingTop: 16,
-            minHeight: 180,
-            position: 'relative',
+            background: 'linear-gradient(180deg, #161620, #0f0f18)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            paddingTop: 16, minHeight: 170, position: 'relative',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}>
-            {/* Show spinner over model until it loads */}
             {!modelLoaded && (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{
-                  width: 24,
-                  height: 24,
-                  border: '3px solid rgba(255,255,255,0.1)',
-                  borderTop: '3px solid #4aa3ff',
+                  width: 20, height: 20,
+                  border: '2px solid rgba(255,255,255,0.08)',
+                  borderTop: '2px solid #4aa3ff',
                   borderRadius: '50%',
                   animation: 'spin 0.7s linear infinite',
                 }} />
@@ -236,111 +196,87 @@ export default function SearchBar({ players, ranks }: SearchBarProps) {
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              width={95}
-              height={155}
-              loading="eager"
-              alt={result.username}
+              width={88} height={145} loading="eager" alt={result.username}
               src={result.uuid ? `https://render.crafty.gg/3d/full/${result.uuid}` : `https://render.crafty.gg/3d/full/dubaditai`}
               onLoad={() => setModelLoaded(true)}
-              style={{
-                display: 'block',
-                opacity: modelLoaded ? 1 : 0,
-                transition: 'opacity 0.3s ease',
-              }}
+              style={{ display: 'block', opacity: modelLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
             />
           </div>
 
-          {/* Username + Rank */}
-          <div style={{ padding: '12px 16px 8px', textAlign: 'center', width: '100%' }}>
-            <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+          {/* Username + rank */}
+          <div style={{ padding: '12px 16px 8px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '0.03em', marginBottom: 4 }}>
               {result.username}
             </div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-              Rank{' '}
-              <span style={{ color: '#4aa3ff', fontWeight: 800 }}>
-                {playerRank ?? '—'}
-              </span>
-              {' · '}
-              <span style={{ color: '#ffcc55', fontWeight: 800 }}>
-                {result._points} pts
-              </span>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 600, letterSpacing: '0.04em' }}>
+              RANK{' '}
+              <span style={{ color: '#4aa3ff', fontWeight: 800 }}>{playerRank ?? '—'}</span>
+              {'  ·  '}
+              <span style={{ color: '#ffcc55', fontWeight: 800 }}>{result._points} pts</span>
             </div>
           </div>
 
-          {/* Divider */}
-          <div style={{ width: '85%', height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 10 }} />
+          {/* Thin divider */}
+          <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.06)' }} />
 
-          {/* Tiers list */}
-          <div style={{ width: '100%', padding: '0 14px 14px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {/* Tier rows */}
+          <div style={{ width: '100%', padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 3, boxSizing: 'border-box' }}>
             {sortedModes.map(mode => {
               const tier = (result[mode.key as ModeKey]?.toUpperCase() || 'U') as TierType;
               const color = TIER_COLORS[tier] ?? '#555';
               const isUnranked = tier === 'U';
               return (
                 <div key={mode.key} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '6px 10px',
-                  borderRadius: 9,
-                  background: isUnranked ? 'rgba(255,255,255,0.02)' : `${color}12`,
-                  border: `1px solid ${isUnranked ? 'rgba(255,255,255,0.05)' : `${color}30`}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '5px 8px',
+                  background: isUnranked ? 'rgba(255,255,255,0.02)' : `${color}0d`,
+                  border: `1px solid ${isUnranked ? 'rgba(255,255,255,0.04)' : `${color}28`}`,
+                  borderLeft: isUnranked ? '1px solid rgba(255,255,255,0.04)' : `2px solid ${color}`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Image
-                      src={mode.icon}
-                      alt={mode.key}
-                      width={18}
-                      height={18}
-                      style={{ opacity: isUnranked ? 0.25 : 1 }}
-                    />
+                    <Image src={mode.icon} alt={mode.key} width={16} height={16}
+                      style={{ opacity: isUnranked ? 0.2 : 1, objectFit: 'contain' }} />
                     <span style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: isUnranked ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
+                      fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase',
+                      color: isUnranked ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.65)',
                     }}>
                       {mode.key}
                     </span>
                   </div>
-                  <span style={{
-                    letterSpacing: '0.3px',
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                    <span style={{ color: isUnranked ? 'rgba(255,255,255,0.12)' : color, fontWeight: 700, fontSize: 11 }}>
+                      {isUnranked ? '—' : tier}
+                    </span>
                     <span style={{
-                        color: isUnranked ? 'rgba(255,255,255,0.15)' : color,
-                        fontWeight: 700,
-                        fontSize: 12,
-                    }}>{isUnranked ? '-' : tier}</span>
-                    <span style={{
-                        color: isUnranked ? 'rgba(255,255,255,0.15)' : `color-mix(in srgb, ${color} 50%, white)`,
-                        fontWeight: 900,
-                        fontSize: 15,
-                    }}>{isUnranked ? '  -' : '  +' + TIER_POINT_MAP[tier]}</span>
-                  </span>        
+                      color: isUnranked ? 'rgba(255,255,255,0.12)' : `color-mix(in srgb, ${color} 60%, white)`,
+                      fontWeight: 900, fontSize: 14,
+                    }}>
+                      {isUnranked ? '' : `+${TIER_POINT_MAP[tier]}`}
+                    </span>
+                  </div>
                 </div>
               );
             })}
           </div>
+
           {/* History link */}
           <div
             onClick={() => { window.location.href = `/history?player=${result.username}`; }}
             style={{
-              width: '100%', padding: '12px 14px',
-              borderTop: '1px solid rgba(255,255,255,0.07)',
+              width: '100%', padding: '10px 14px',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               cursor: 'pointer', background: 'rgba(255,255,255,0.02)',
-              transition: 'background 0.2s',
+              transition: 'background 0.15s',
             }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(74,163,255,0.08)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
           >
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               View test history
             </span>
-            <span style={{ fontSize: 13, color: '#4aa3ff' }}>→</span>
+            <span style={{ fontSize: 12, color: '#4aa3ff' }}>→</span>
           </div>
-
         </div>
       )}
     </div>

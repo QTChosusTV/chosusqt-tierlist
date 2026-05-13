@@ -11,41 +11,172 @@ interface PlayerRowProps {
   selectedMode: FilterMode;
 }
 
-// Top 3 rank accent colors
-const RANK_COLORS: Record<number, string> = {
-  1: '#b56bff',
-  2: '#4aa3ff',
-  3: '#00ffcc',
-};
 
 // Score color based on points value — mirrors the tier point scale feel
 function getScoreColor(points: number): string {
-  if (points >= 5000) return '#ffffff';
-  if (points >= 1500)  return '#8b0000';
-  if (points >= 500)  return '#ff0000';
-  if (points >= 250)   return '#ff7575';
-  if (points >= 125)   return '#ffcc55';
-  if (points >= 50)   return '#ff00ff';
-  if (points >= 35)    return '#00ffff';
-  if (points >= 25)    return '#5588ff';
-  if (points >= 20)    return '#00ff00';
-  if (points >= 15)    return '#aaaaaa';
-  if (points >= 10)    return '#777777';
-  if (points >= 5)    return '#444444';
+  if (points >= 4000) return '#ffffff';
+  if (points >= 2000)  return '#8b0000';
+  if (points >= 800)  return '#ff0000';
+  if (points >= 400)   return '#ff7575';
+  if (points >= 200)   return '#ffcc55';
+  if (points >= 80)   return '#ff00ff';
+  if (points >= 56)    return '#5588ff';
+  if (points >= 40)    return '#00ffff';
+  if (points >= 32)    return '#00ff00';
+  if (points >= 24)    return '#aaaaaa';
+  if (points >= 16)    return '#777777';
+  if (points >= 8)    return '#444444';
   return 'rgba(255,255,255,0.3)';
 }
 
-const rankColor = (rank: number) => RANK_COLORS[rank] ?? 'rgba(255,255,255,0.35)';
+function adjustColor(
+  hex: string,
+  brightnessMul: number,
+  saturationMul: number
+) {
+  hex = hex.replace('#', '');
+
+  let r = parseInt(hex.substring(0, 2), 16) / 255;
+  let g = parseInt(hex.substring(2, 4), 16) / 255;
+  let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+
+  let h = 0;
+  let s = 0;
+  let l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+
+    s = l > 0.5
+      ? d / (2 - max - min)
+      : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+
+    h /= 6;
+  }
+
+  // adjust saturation + brightness
+  s = Math.max(0, Math.min(1, s * saturationMul));
+  l = Math.max(0, Math.min(1, l * brightnessMul));
+
+  function hue2rgb(p: number, q: number, t: number) {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+
+  let rr, gg, bb;
+
+  if (s === 0) {
+    rr = gg = bb = l;
+  } else {
+    const q = l < 0.5
+      ? l * (1 + s)
+      : l + s - l * s;
+
+    const p = 2 * l - q;
+
+    rr = hue2rgb(p, q, h + 1 / 3);
+    gg = hue2rgb(p, q, h);
+    bb = hue2rgb(p, q, h - 1 / 3);
+  }
+
+  return `rgb(${Math.round(rr * 255)}, ${Math.round(gg * 255)}, ${Math.round(bb * 255)})`;
+}
+
+function mixColors(color1: string, color2: string, amount: number) {
+  const c1 = color1.match(/\d+/g)?.map(Number) || [0, 0, 0];
+  const c2 = color2.match(/\d+/g)?.map(Number) || [0, 0, 0];
+
+  const r = Math.round(c1[0] * (1 - amount) + c2[0] * amount);
+  const g = Math.round(c1[1] * (1 - amount) + c2[1] * amount);
+  const b = Math.round(c1[2] * (1 - amount) + c2[2] * amount);
+
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function getRankBackground(rank: number, points: number): string {
+  const bgTop = 'rgb(20, 20, 26)';
+  const bgBottom = 'rgb(16, 16, 20)';
+
+  if (points === 0 || rank > 300) {
+    return `linear-gradient(180deg, ${bgTop}, ${bgBottom})`;
+  }
+
+  let baseColor = '';
+
+  if (rank <= 1) baseColor = '#ffffff';
+  else if (rank <= 3) baseColor = '#8b0000';
+  else if (rank <= 5) baseColor = '#ff0000';
+  else if (rank <= 10) baseColor = '#ff7575';
+  else if (rank <= 20) baseColor = '#ffcc55';
+  else if (rank <= 40) baseColor = '#ff00ff';
+  else if (rank <= 80) baseColor = '#5588ff';
+  else if (rank <= 150) baseColor = '#00ffff';
+  else baseColor = '#00ff00';
+
+  // make subdued prestige tint
+  const tintedTop = mixColors(
+    bgTop,
+    adjustColor(baseColor, 1, 0.7),
+    0.1
+  );
+
+  const tintedBottom = mixColors(
+    bgBottom,
+    adjustColor(baseColor, 0.8, 0.45),
+    0.05
+  );
+
+  return `linear-gradient(180deg, ${tintedTop}, ${tintedBottom})`;
+}
+
+function getRankAccentColor(rank: number, points: number): string {
+  if (points === 0 || rank > 300) {
+    return 'rgba(255,255,255,0.35)';
+  }
+
+  if (rank <= 1) return '#ffffff';
+  if (rank <= 3) return '#bd0000';
+  if (rank <= 5) return '#ff0000';
+  if (rank <= 10) return '#ff7575';
+  if (rank <= 20) return '#ffcc55';
+  if (rank <= 40) return '#ff00ff';
+  if (rank <= 80) return '#5588ff';
+  if (rank <= 150) return '#00ffff';
+
+  return '#00ff00';
+}
+
 
 // Left border accent for top 3
-const rankBorderStyle = (rank: number): React.CSSProperties =>
-  rank <= 3
-    ? { borderLeft: `3px solid ${rankColor(rank)}` }
-    : { borderLeft: '3px solid transparent' };
+const rankBorderStyle = (
+  rank: number,
+  points: number
+): React.CSSProperties => ({
+  borderLeft: `3px solid ${getRankAccentColor(rank, points)}`,
+});
 
 export default function PlayerRow({ player, rank, selectedMode }: PlayerRowProps) {
   const scoreColor = getScoreColor(player._points);
-  const rColor = rankColor(rank);
+  const rColor = getRankAccentColor(rank, player._points);
 
   return (
     <div
@@ -54,21 +185,12 @@ export default function PlayerRow({ player, rank, selectedMode }: PlayerRowProps
         gridTemplateColumns: '80px 54px 220px 100px repeat(8, 1fr)',
         alignItems: 'center',
         gap: '14px',
-        background: rank === 1
-          ? 'linear-gradient(180deg, #1a1228, #100e18)'
-          : rank === 2
-          ? 'linear-gradient(180deg, #0e1624, #0a0e18)'
-          : rank === 3
-          ? 'linear-gradient(180deg, #0e1a18, #0a1210)'
-          : 'linear-gradient(180deg, #14141a, #101014)',
-        boxShadow: rank <= 3
-          ? `0 6px 20px rgba(0,0,0,0.35), inset 0 0 40px ${rankColor(rank)}08`
-          : '0 6px 20px rgba(0,0,0,0.35)',
+        background: getRankBackground(rank, player._points),
         minHeight: 72,
         boxSizing: 'border-box',
         padding: '0 16px 0 13px', // 13px to account for 3px border
         borderRadius: 0,
-        ...rankBorderStyle(rank),
+        ...rankBorderStyle(rank, player._points),
       }}
     >
       {/* Rank */}
@@ -151,6 +273,8 @@ export default function PlayerRow({ player, rank, selectedMode }: PlayerRowProps
               willChange: 'opacity',
               display: 'flex',
               alignItems: 'center',
+              marginTop: '10px',
+              marginBottom: '5px'
             }}
           >
             <TierCell mode={mode} tier={tier} />

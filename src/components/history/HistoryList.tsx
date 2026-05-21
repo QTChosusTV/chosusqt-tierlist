@@ -53,7 +53,27 @@ function tierIdx(tier: string): number {
 }
 
 function isHighTest(entry: HistoryEntry): boolean {
-  return (entry.test_array?.length ?? 0) > 1;
+  if ((entry.test_array?.length ?? 0) > 1) return true;
+
+  if (entry.tester === 'System') {
+    const fights = entry.test_array ?? [];
+    const lt3Index = TIER_SCALE.indexOf('LT3');
+
+    return fights.length > 0 && fights.every(fight => {
+      const testedIsPlayer1 = fight.player1 === entry.tested;
+      const testedTier   = testedIsPlayer1 ? fight.tier1 : fight.tier2;
+      const opponentTier = testedIsPlayer1 ? fight.tier2 : fight.tier1;
+
+      if (!testedTier || !opponentTier) return false;
+
+      const testedRank   = TIER_SCALE.indexOf(testedTier);
+      const opponentRank = TIER_SCALE.indexOf(opponentTier);
+
+      return testedRank >= lt3Index && opponentRank >= testedRank;
+    });
+  }
+
+  return false;
 }
 
 function nextTier(tier: string): string {

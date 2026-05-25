@@ -1,3 +1,4 @@
+// tester/page.tsx
   'use client';
 
   import TestChat from '@/components/TestChat';
@@ -7,6 +8,18 @@
   import { MODES } from '@/types/tierlist';
   import type { QueueEntry } from '@/app/queue/page';
   import TierUpdateForm from '@/components/TierUpdateForm';
+
+  const TIER_SCALE = [
+    'LT6','HT6','LT5','HT5','LT4','HT4',
+    'LT3','HT3','LT2','HT2','LT1','HT1',
+  ];
+  const LT3_RANK = TIER_SCALE.indexOf('LT3'); // 6
+
+  function isLT3Plus(tier: string | null | undefined): boolean {
+    if (!tier) return false;
+    const rank = TIER_SCALE.indexOf(tier.toUpperCase());
+    return rank >= LT3_RANK;
+  }
 
   function PlayerAvatar({ username, size = 32 }: { username: string; size?: number }) {
     return (
@@ -42,6 +55,7 @@
     const [loggingIn, setLoggingIn] = useState(false);
     const [testerUsername, setTesterUsername] = useState<string | null>(null);
     const [testerId, setTesterId] = useState<string | null>(null);
+    const [testerTiers, setTesterTiers] = useState<Record<string, string>>({});
     const [queue, setQueue] = useState<QueueEntry[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [claiming, setClaiming] = useState(false);
@@ -83,23 +97,16 @@
         .select('username, is_open, tester')
         .eq('id', uid)
         .maybeSingle() as {
-          data: {
-            username: string;
-            is_open: boolean;
-            tester: boolean;
-          } | null;
+          data: { username: string; is_open: boolean; tester: boolean } | null;
           error: any;
         };
 
-      // No row or not a tester
       if (error || !data || data.tester !== true) {
         await supabase.auth.signOut();
-
         setTesterUsername(null);
         setTesterId(null);
         setIsOpen(false);
         setActiveEntry(null);
-
         setLoginError('You do not have permission to access the tester panel.');
         return;
       }
@@ -107,6 +114,21 @@
       setTesterUsername(data.username);
       setTesterId(uid);
       setIsOpen(data.is_open ?? false);
+
+      // Fetch tester's own tiers so we can gate claims by mode
+      const { data: tierData } = await (supabase as any)
+        .from('tiers')
+        .select('*')
+        .eq('username', data.username)
+        .maybeSingle();
+
+      if (tierData) {
+        const tiers: Record<string, string> = {};
+        MODES.forEach(m => {
+          if (tierData[m.key]) tiers[m.key] = tierData[m.key];
+        });
+        setTesterTiers(tiers);
+      }
     }
 
     // ── Sync is_open to DB ────────────────────────────────────────────────────
@@ -119,13 +141,12 @@
           .update({ is_open: next })
           .eq('id', testerId);
       }
-      // Auto-remove active player when closing
       if (!next && myActive) {
         await supabase.from('queue' as any).delete().eq('id', myActive.id);
         setActiveEntry(null);
       }
     }
-    
+
     // ── Heartbeat: update last_seen every 30s ─────────────────────────────────
     useEffect(() => {
       if (!testerId) return;
@@ -195,6 +216,13 @@
     }, [testerUsername]);
 
     async function handleClaim(entry: QueueEntry) {
+      // Gate: tester must be LT3+ in the entry's mode
+      const testerTierForMode = testerTiers[entry.mode?.toLowerCase()];
+      if (!isLT3Plus(testerTierForMode)) {
+        alert(`You must be LT3 or higher in ${entry.mode?.toUpperCase()} to claim this test.`);
+        return;
+      }
+
       setClaiming(true);
       const { error } = await (supabase as any)
         .from('queue')
@@ -331,19 +359,17 @@
               <button onClick={handleSkip} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,85,85,0.3)', background: 'rgba(255,85,85,0.08)', color: '#ff5555', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>✕ Skip</button>
             </div>
           </div>
-
-
         )}
 
         {myActive && (
-            <div style={{ marginBottom: 28 }}>
-              <TestChat
-                entryId={myActive.id}
-                myName={testerUsername!}
-                otherName={myActive.username}
-              />
-            </div>
-          )}
+          <div style={{ marginBottom: 28 }}>
+            <TestChat
+              entryId={myActive.id}
+              myName={testerUsername!}
+              otherName={myActive.username}
+            />
+          </div>
+        )}
 
         {!myActive && isOpen && (
           <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -371,6 +397,7 @@
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {waitingQueue.map((entry, index) => {
               const isNext = index === 0;
+              const canClaim = isLT3Plus(testerTiers[entry.mode?.toLowerCase()]);
               return (
                 <div key={entry.id} style={{
                   borderRadius: 10, padding: '12px 16px',
@@ -384,18 +411,29 @@
                   <ModeIcon modeKey={entry.mode} size={16} />
                   <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>{entry.mode}</span>
                   {isNext && isOpen && !myActive && (
-                    <button onClick={() => handleClaim(entry)} disabled={claiming}
-                      style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #4aa3ff, #b56bff)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                      Claim
-                    </button>
+                    canClaim ? (
+                      <button onClick={() => handleClaim(entry)} disabled={claiming}
+                        style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #4aa3ff, #b56bff)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                        Claim
+                      </button>
+                    ) : (
+                      <div title={`You need LT3+ in ${entry.mode?.toUpperCase()} to claim`} style={{
+                        padding: '6px 12px', borderRadius: 8,
+                        border: '1px solid rgba(255,85,85,0.25)',
+                        background: 'rgba(255,85,85,0.06)',
+                        color: 'rgba(255,85,85,0.5)', fontWeight: 700, fontSize: 12,
+                        letterSpacing: '0.04em',
+                      }}>
+                        Need LT3+
+                      </div>
+                    )
                   )}
                 </div>
               );
             })}
           </div>
-          
         )}
-        
+
         <div style={{ marginTop: 32 }}>
           <TierUpdateForm
             defaultTester={testerUsername ?? ''}
@@ -403,8 +441,6 @@
             defaultMode={myActive?.mode ?? ''}
           />
         </div>
-
       </div>
-      
     );
   }

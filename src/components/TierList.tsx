@@ -21,6 +21,13 @@ const TIER_ORDER: Record<string, number> = {
   U: 13,
 };
 
+// LT3 and above (index >= 6 in TIER_SCALE) show coeff
+const TIER_SCALE = [
+  'LT6','HT6','LT5','HT5','LT4','HT4',
+  'LT3','HT3','LT2','HT2','LT1','HT1',
+];
+const LT3_RANK = TIER_SCALE.indexOf('LT3'); // 6
+
 const TIER_INFO = [
   { tier: 'LT6', label: '+1', color: '#444444' },
   { tier: 'HT6', label: '+2', color: '#777777' },
@@ -35,6 +42,51 @@ const TIER_INFO = [
   { tier: 'LT1', label: '+250', color: '#8b0000' },
   { tier: 'HT1', label: '+1000', color: '#ffffff' },
 ];
+
+// Map mode key → coeff column name
+const MODE_TO_COEFF: Record<string, string> = {
+  axe: 'axe_coeff', sword: 'sword_coeff', nethop: 'nethop_coeff', smp: 'smp_coeff',
+  mace: 'mace_coeff', vanilla: 'vanilla_coeff', diapot: 'diapot_coeff', uhc: 'uhc_coeff',
+};
+
+// ── Coeff badge shown top-right of a mode's tier chip ───────────────────────
+interface CoeffBadgeProps {
+  coeff: number | null | undefined;
+  tier: string | null | undefined;
+}
+
+export function CoeffBadge({ coeff, tier }: CoeffBadgeProps) {
+  if (coeff === null || coeff === undefined || coeff === 0) return null;
+  if (!tier) return null;
+  const rank = TIER_SCALE.indexOf(tier.toUpperCase());
+  if (rank < LT3_RANK) return null; // only LT3+
+
+  const isPositive = coeff > 0;
+  const color = isPositive ? '#4ade80' : '#ff5555';
+  const bgColor = isPositive ? 'rgba(74,222,128,0.12)' : 'rgba(255,85,85,0.12)';
+  const borderColor = isPositive ? 'rgba(74,222,128,0.3)' : 'rgba(255,85,85,0.3)';
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: -10,
+      right: -10,
+      fontSize: 10,
+      fontWeight: 900,
+      color,
+      background: bgColor,
+      border: `1px solid ${borderColor}`,
+      padding: '1px 4px',
+      letterSpacing: '0.04em',
+      lineHeight: 1.4,
+      pointerEvents: 'none',
+      zIndex: 2,
+      whiteSpace: 'nowrap',
+    }}>
+      {isPositive ? '+' : ''}{Math.round(coeff * 100) / 100}
+    </div>
+  );
+}
 
 export default function TierList() {
   const [players, setPlayers] = useState<PlayerWithPoints[]>([]);
@@ -51,7 +103,10 @@ export default function TierList() {
     async function fetchPlayers() {
       try {
         setLoading(true);
-        const { data, error } = await supabase.from('tiers').select('*');
+        // Fetch tiers + all coeff columns
+        const { data, error } = await supabase.from('tiers').select(
+          '*, axe_coeff, sword_coeff, nethop_coeff, smp_coeff, mace_coeff, vanilla_coeff, diapot_coeff, uhc_coeff'
+        );
         if (error) throw error;
         if (data) {
           const playersWithPoints = addPointsToPlayers(data as Player[]);
@@ -152,105 +207,50 @@ export default function TierList() {
     else rowRefs.current.delete(key);
   }
 
-  if (loading) {
-    return (
-      <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>
-        {/* ── Title ── */}
-        <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative' }}>
-          {/* decorative top line */}
-          <div style={{
-            width: 120, height: 1,
-            background: 'linear-gradient(90deg, transparent, #b56bff, transparent)',
-            margin: '0 auto 16px',
-          }} />
+  const titleBlock = (
+    <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative' }}>
+      <div style={{
+        width: 120, height: 1,
+        background: 'linear-gradient(90deg, transparent, #b56bff, transparent)',
+        margin: '0 auto 16px',
+      }} />
+      <h1 style={{
+        fontSize: 42, fontWeight: 900, letterSpacing: '0.06em',
+        textTransform: 'uppercase', margin: 0,
+        background: 'linear-gradient(135deg, #4aa3ff 0%, #b56bff 50%, #ff4444 100%)',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+      }}>
+        ChosusQT&apos;s Tier List
+      </h1>
+      <div style={{
+        width: 120, height: 1,
+        background: 'linear-gradient(90deg, transparent, #4aa3ff, transparent)',
+        margin: '16px auto 0',
+      }} />
+    </div>
+  );
 
-          <h1 style={{
-            fontSize: 42,
-            fontWeight: 900,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            margin: 0,
-            background: 'linear-gradient(135deg, #4aa3ff 0%, #b56bff 50%, #ff4444 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            ChosusQT&apos;s Tier List
-          </h1>
-
-          {/* decorative bottom line */}
-          <div style={{
-            width: 120, height: 1,
-            background: 'linear-gradient(90deg, transparent, #4aa3ff, transparent)',
-            margin: '16px auto 0',
-          }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>
-        <h1 style={{
-          fontSize: 48, fontWeight: 900, textAlign: 'center', marginBottom: 40,
-          background: 'linear-gradient(135deg, #4aa3ff, #b56bff, #ff4444)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-        }}>
-          ChosusQT&apos;s Tier List
-        </h1>
-        <div style={{ textAlign: 'center', color: '#ff4444', fontSize: 18 }}>Error: {error}</div>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>{titleBlock}</div>;
+  if (error) return (
+    <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>
+      {titleBlock}
+      <div style={{ textAlign: 'center', color: '#ff4444', fontSize: 18 }}>Error: {error}</div>
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: 1400, margin: '40px auto', padding: '0 24px' }}>
-      {/* ── Title ── */}
-      <div style={{ textAlign: 'center', marginBottom: 40, position: 'relative' }}>
-        {/* decorative top line */}
-        <div style={{
-          width: 120, height: 1,
-          background: 'linear-gradient(90deg, transparent, #b56bff, transparent)',
-          margin: '0 auto 16px',
-        }} />
-
-        <h1 style={{
-          fontSize: 42,
-          fontWeight: 900,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          margin: 0,
-          background: 'linear-gradient(135deg, #4aa3ff 0%, #b56bff 50%, #ff4444 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}>
-          ChosusQT&apos;s Tier List
-        </h1>
-
-        {/* decorative bottom line */}
-        <div style={{
-          width: 120, height: 1,
-          background: 'linear-gradient(90deg, transparent, #4aa3ff, transparent)',
-          margin: '16px auto 0',
-        }} />
-      </div>
+      {titleBlock}
 
       {/* ── Nav bar ── */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 0,              // no gap — buttons share borders
-        marginBottom: 32,
-        position: 'relative',
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        gap: 0, marginBottom: 32, position: 'relative',
       }}>
-
-        {/* ModeFilter sits slightly apart as a distinct control */}
         <div style={{ marginRight: 16 }}>
           <ModeFilter selectedMode={selectedMode} onModeChange={handleModeChange} />
         </div>
 
-        {/* Grouped action buttons — shared border, sharp corners */}
         {[
           { label: 'Info',              onClick: () => setShowInfo(true) },
           { label: 'History',           onClick: () => { window.location.href = '/history'; } },
@@ -260,34 +260,23 @@ export default function TierList() {
             key={btn.label}
             onClick={btn.onClick}
             style={{
-              padding: '10px 18px',
-              borderRadius: 0,
+              padding: '10px 18px', borderRadius: 0,
               border: '1px solid rgba(255,255,255,0.12)',
               borderRight: i < arr.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.12)',
               background: 'rgba(255,255,255,0.04)',
               color: btn.beta ? '#ffcc55' : 'rgba(255,255,255,0.75)',
-              cursor: 'pointer',
-              fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase' as const,
+              cursor: 'pointer', fontWeight: 700, fontSize: 13,
+              letterSpacing: '0.05em', textTransform: 'uppercase' as const,
               transition: 'background 0.15s, color 0.15s',
               whiteSpace: 'nowrap' as const,
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.09)';
-              e.currentTarget.style.color = '#fff';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-              e.currentTarget.style.color = btn.beta ? '#ffcc55' : 'rgba(255,255,255,0.75)';
-            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = btn.beta ? '#ffcc55' : 'rgba(255,255,255,0.75)'; }}
           >
             {btn.label}
           </button>
         ))}
 
-        {/* Search bar pinned right */}
         <div style={{ position: 'absolute', right: 0 }}>
           <SearchBar players={players} ranks={ranksMap} />
         </div>
@@ -297,10 +286,8 @@ export default function TierList() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: '80px 54px 220px 100px repeat(8, 1fr)',
-        alignItems: 'center',
-        gap: '14px',
-        padding: '6px 16px 6px 16px',
-        marginBottom: 4,
+        alignItems: 'center', gap: '14px',
+        padding: '6px 16px 6px 16px', marginBottom: 4,
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{ width: 60, marginLeft: 20 }} />
@@ -312,56 +299,58 @@ export default function TierList() {
           Score
         </div>
         {MODES.map((mode: Mode) => (
-          <div key={mode.key} style={{ display: 'flex', gap: '10px', marginLeft: '27.5px'}}>
-            <Image
-              src={mode.icon}
-              alt={mode.key}
-              width={18}
-              height={18}
-              style={{ opacity: 0.25, objectFit: 'contain' }}
-            />
+          <div key={mode.key} style={{ display: 'flex', gap: '10px', marginLeft: '27.5px' }}>
+            <Image src={mode.icon} alt={mode.key} width={18} height={18} style={{ opacity: 0.25, objectFit: 'contain' }} />
           </div>
         ))}
       </div>
 
+      {/* Player rows — pass coeff data through */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filteredPlayers.map((player, index) => {
           const key = player.uuid || `${player.username}  `;
+
+          // Build coeff map for this player: { axe: number, sword: number, ... }
+          const coeffMap: Record<string, number | null> = {};
+          MODES.forEach((m: Mode) => {
+            const col = MODE_TO_COEFF[m.key];
+            coeffMap[m.key] = col ? ((player as any)[col] ?? null) : null;
+          });
+
           return (
             <div key={key} ref={(el) => setRowRef(key, el)}>
-              <PlayerRow player={player} rank={ranks[index]} selectedMode={selectedMode} />
+              <PlayerRow
+                player={player}
+                rank={ranks[index]}
+                selectedMode={selectedMode}
+                coeffMap={coeffMap}
+              />
             </div>
           );
         })}
       </div>
 
+      {/* ── Info modal ── */}
       {showInfo && (
         <div
           onClick={() => setShowInfo(false)}
           style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.72)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 999,
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999,
           }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               width: 860, maxWidth: '95%', maxHeight: '90vh',
-              overflowY: 'auto',
-              background: '#0d0d12',
+              overflowY: 'auto', background: '#0d0d12',
               border: '1px solid rgba(255,255,255,0.1)',
               boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
-              color: '#fff',
-              scrollbarWidth: 'none',
-              overflow: 'hidden',
+              color: '#fff', scrollbarWidth: 'none', overflow: 'hidden',
             }}
           >
-            {/* Modal header */}
             <div style={{
-              padding: '11px 20px',
-              background: '#111118',
+              padding: '11px 20px', background: '#111118',
               borderBottom: '1px solid rgba(255,255,255,0.07)',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
@@ -405,7 +394,6 @@ export default function TierList() {
                 {/* RIGHT — rules */}
                 <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                  {/* LT3 and below */}
                   <div style={{
                     background: 'rgba(255,0,255,0.04)',
                     border: '1px solid rgba(255,0,255,0.15)',
@@ -416,13 +404,12 @@ export default function TierList() {
                       <span style={{ fontWeight: 800, fontSize: 13, color: '#ff00ff', letterSpacing: '0.04em' }}>LT3 and below</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Evaluation Placement</span>
                     </div>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 0 0', lineHeight: 1.6 }}>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.6 }}>
                       Evaluated by a tester of known tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>T</span>.
                       All matches are FT7. The result is determined by the tester's judgment — no scoring formula applies here.
                     </p>
                   </div>
 
-                  {/* HT3 and above */}
                   <div style={{
                     background: 'rgba(255,204,85,0.04)',
                     border: '1px solid rgba(255,204,85,0.18)',
@@ -435,12 +422,10 @@ export default function TierList() {
                     </div>
 
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px 0', lineHeight: 1.6 }}>
-                      To promote from your current tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>X</span>, accumulate a score of <span style={{ color: '#ffcc55', fontWeight: 800 }}>≥ 9</span> across up to <span style={{ color: '#ffcc55', fontWeight: 800 }}>6 fights</span>.
-                      You must fight at least one opponent of tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>X+1</span> to be eligible for that promotion.
-                      You cannot fight anyone worse than <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>X−1</span>.
+                      To promote from your current tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>X</span>, reach a session score of <span style={{ color: '#ffcc55', fontWeight: 800 }}>≥ 9</span> in a single high test.
+                      If a higher-tier opponent is available, fight a same-tier validation first — then the X+1. No X−1 fights.
                     </p>
 
-                    {/* Score weights */}
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
                       Score weights per fight
                     </div>
@@ -448,58 +433,28 @@ export default function TierList() {
                       {[
                         { opp: 'Same tier (X)', win: '+1', loss: '−1', winColor: '#4ade80', lossColor: '#ff5555' },
                         { opp: 'Higher tier (X+1)', win: '+3', loss: '−0.5', winColor: '#4ade80', lossColor: '#ffaa55' },
-                        { opp: 'Lower tier (X−1)', win: '+0.5', loss: '−3', winColor: '#ffcc55', lossColor: '#ff3333' },
                       ].map(row => (
                         <div key={row.opp} style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr auto auto',
+                          display: 'grid', gridTemplateColumns: '1fr auto auto',
                           gap: 8, alignItems: 'center',
                           padding: '7px 10px',
                           background: 'rgba(255,255,255,0.03)',
                           border: '1px solid rgba(255,255,255,0.06)',
                         }}>
                           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{row.opp}</span>
-                          <span style={{
-                            fontSize: 12, fontWeight: 800, color: row.winColor,
-                            background: `${row.winColor}14`, border: `1px solid ${row.winColor}40`,
-                            padding: '2px 10px', borderRadius: 0, textAlign: 'center', minWidth: 44,
-                          }}>W {row.win}</span>
-                          <span style={{
-                            fontSize: 12, fontWeight: 800, color: row.lossColor,
-                            background: `${row.lossColor}14`, border: `1px solid ${row.lossColor}40`,
-                            padding: '2px 10px', borderRadius: 0, textAlign: 'center', minWidth: 44,
-                          }}>L {row.loss}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: row.winColor, background: `${row.winColor}14`, border: `1px solid ${row.winColor}40`, padding: '2px 10px', textAlign: 'center', minWidth: 44 }}>W {row.win}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: row.lossColor, background: `${row.lossColor}14`, border: `1px solid ${row.lossColor}40`, padding: '2px 10px', textAlign: 'center', minWidth: 44 }}>L {row.loss}</span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Promotion rules */}
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
-                      Promotion rules
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-                      {[
-                        'Total score must reach ≥ 9 to promote',
-                        'Must fight at least 1 opponent of tier X+1 to promote to that tier',
-                        'If no X+1 opponents available, fight 3 opponents of tier X',
-                        'Cannot fight opponents worse than tier X−1',
-                        'Maximum 6 fights per promotion attempt',
-                      ].map((req, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                          <span style={{ color: '#4ade80', fontSize: 11, marginTop: 1, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>{req}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Demotion */}
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
                       Demotion conditions
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       {[
-                        { cond: 'Score drops below −9', val: 'Demotion', color: '#ff3333' },
-                        { cond: 'HT1 fails validation', val: '→ LT1 instantly', color: '#ff3333' },
+                        { cond: 'Cumulative coefficient drops below −9', val: '→ Demote to X−1', color: '#ff3333' },
+                        { cond: 'Coefficient resets after any tier change', val: 'Reset to 0', color: '#ffaa55' },
                       ].map((p, i) => (
                         <div key={i} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
@@ -513,7 +468,6 @@ export default function TierList() {
                       ))}
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>

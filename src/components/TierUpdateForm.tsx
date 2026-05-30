@@ -179,6 +179,7 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
   ]);
   const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [fetchingTier, setFetchingTier] = useState<string | null>(null);
 
   useEffect(() => {
     setTester(defaultTester);
@@ -188,6 +189,12 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
     setNewTier(''); setOldTier('');
     setSuccess(false); setError(null);
   }, [defaultContestant, defaultTester, defaultMode]);
+
+  useEffect(() => {
+    if (defaultContestant && defaultMode) {
+      fetchAndSetOldTier(defaultContestant);
+    }
+  }, [defaultContestant, defaultMode]);
 
   function addFight() {
     setFights(prev => [...prev, { player1: tester, player2: contestant, score1: '', score2: '', tier1: '', tier2: '' }]);
@@ -199,6 +206,27 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
 
   function updateFight(i: number, field: keyof Fight, value: string | number) {
     setFights(prev => prev.map((f, idx) => idx === i ? { ...f, [field]: value } : f));
+  }
+
+  async function fetchAndSetTier(username: string, target: 'p1' | 'p2', fightIndex: number) {
+    if (!username.trim() || !mode) return;
+    const key = `${fightIndex}-${target}`;
+    setFetchingTier(key);
+    const { data } = await (supabase as any)
+      .from('tiers').select(mode).eq('username', username).maybeSingle();
+    if (data?.[mode]) {
+      updateFight(fightIndex, target === 'p1' ? 'tier1' : 'tier2', data[mode].toUpperCase());
+    }
+    setFetchingTier(null);
+  }
+
+  async function fetchAndSetOldTier(username: string) {
+    if (!username.trim() || !mode) return;
+    setFetchingTier('old');
+    const { data } = await (supabase as any)
+      .from('tiers').select(mode).eq('username', username).maybeSingle();
+    if (data?.[mode]) setOldTier(data[mode].toUpperCase());
+    setFetchingTier(null);
   }
 
   // ── Detect if submission is a high test ──────────────────────────────────
@@ -216,7 +244,7 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
     }
 
     // Block HT3+ updates for non-ChosusQT
-    if (isHighTierUpdate && tester !== 'ChosusQT') {
+    if (isHighTierUpdate && defaultTester !== 'ChosusQT') {
       setError('Only ChosusQT can submit HT3+ tier updates.');
       return;
     }
@@ -236,7 +264,14 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
 
       // Determine if fight[0] is a validation fight
       // Validation: fights.length >= 2 AND fight[0] opponent tier > tested tier
-      const isMultiFight = fights.length >= 2;
+      const hasHigherOpponent = fights.some(fight => {
+      const testedIsP1 = fight.player1 === contestant;
+      const testedTier = testedIsP1 ? fight.tier1 : fight.tier2;
+      const opponentTier = testedIsP1 ? fight.tier2 : fight.tier1;
+      if (!testedTier || !opponentTier) return false;
+        return getTierRank(opponentTier) > getTierRank(testedTier);
+      });
+      const isMultiFight = fights.length >= 2 && hasHigherOpponent;
       const fightResults: FightCoeffResult[] = fights.map((fight, i) => {
         const isValidation = isMultiFight && i === 0;
         return calcFightCoeff(fight, contestant, i, isValidation);
@@ -501,6 +536,52 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
               })}
             </div>
 
+            {/* Opponent coeff impact */}
+            {(() => {
+              const opponents = fightResults
+                .filter(r => !r.isValidation && r.delta !== 0)
+                .map(r => ({
+                  name: r.player1 === contestant ? r.player2 : r.player1,
+                  penalty: -(r.delta * 0.25),
+                }));
+
+              // Merge same opponent across multiple fights
+              const merged: Record<string, number> = {};
+              opponents.forEach(o => {
+                merged[o.name] = (merged[o.name] ?? 0) + o.penalty;
+              });
+
+              const entries = Object.entries(merged);
+              if (entries.length === 0) return null;
+
+              return (
+                <>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
+                    Opponent Coeff Impact
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                    {entries.map(([name, penalty]) => {
+                      const color = penalty > 0 ? '#4ade80' : '#ff5555';
+                      return (
+                        <div key={name} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          padding: '8px 10px',
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          borderLeft: `2px solid ${color}`,
+                        }}>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{name}</span>
+                          <span style={{ fontSize: 13, fontWeight: 900, color }}>
+                            {penalty > 0 ? '+' : ''}{Math.round(penalty * 100) / 100}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+
             {/* Confirm / cancel */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button
@@ -594,15 +675,33 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
             </div>
             <div>
               <label style={labelStyle}>Old Tier</label>
-              <select
-                style={{ ...selectStyle, color: oldTier ? getTierColor(oldTier) : 'rgba(255,255,255,0.3)' }}
-                value={oldTier} onChange={e => setOldTier(e.target.value)}
-              >
-                <option value="">— none —</option>
-                {TIERS.map(t => (
-                  <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <select
+                  style={{ ...selectStyle, flex: 1, color: oldTier ? getTierColor(oldTier) : 'rgba(255,255,255,0.3)' }}
+                  value={oldTier} onChange={e => setOldTier(e.target.value)}
+                >
+                  <option value="">— none —</option>
+                  {TIERS.map(t => (
+                    <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => fetchAndSetOldTier(contestant)}
+                  disabled={fetchingTier === 'old'}
+                  title="Fetch contestant's current tier"
+                  style={{
+                    padding: '0 8px', border: '1px solid rgba(255,255,255,0.09)',
+                    background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
+                    cursor: 'pointer', fontSize: 11, flexShrink: 0,
+                    opacity: fetchingTier === 'old' ? 0.4 : 1,
+                    transition: 'background 0.12s, color 0.12s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+                >
+                  {fetchingTier === 'old' ? '…' : '⟳'}
+                </button>
+              </div>
             </div>
             <div>
               <label style={labelStyle}>New Tier</label>
@@ -639,7 +738,14 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {fights.map((fight, i) => {
-                const isValidationFight = fights.length >= 2 && i === 0;
+                const hasHigherOpponent = fights.some(f => {
+                  const testedIsP1 = f.player1 === contestant;
+                  const testedTier = testedIsP1 ? f.tier1 : f.tier2;
+                  const opponentTier = testedIsP1 ? f.tier2 : f.tier1;
+                  if (!testedTier || !opponentTier) return false;
+                  return getTierRank(opponentTier) > getTierRank(testedTier);
+                });
+                const isValidationFight = fights.length >= 2 && hasHigherOpponent && i === 0;
                 return (
                   <div key={i} style={{
                     padding: '10px 12px',
@@ -695,17 +801,61 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
 
                     {/* Tiers */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 6, alignItems: 'center' }}>
-                      <select style={{ ...selectStyle, color: fight.tier1 ? getTierColor(fight.tier1) : 'rgba(255,255,255,0.25)', fontWeight: fight.tier1 ? 700 : 400 }}
-                        value={fight.tier1} onChange={e => updateFight(i, 'tier1', e.target.value)}>
-                        <option value="">P1 tier</option>
-                        {TIERS.map(t => <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>)}
-                      </select>
+                      {/* P1 tier */}
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <select
+                          style={{ ...selectStyle, flex: 1, color: fight.tier1 ? getTierColor(fight.tier1) : 'rgba(255,255,255,0.25)', fontWeight: fight.tier1 ? 700 : 400 }}
+                          value={fight.tier1} onChange={e => updateFight(i, 'tier1', e.target.value)}
+                        >
+                          <option value="">P1 tier</option>
+                          {TIERS.map(t => <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>)}
+                        </select>
+                        <button
+                          onClick={() => fetchAndSetTier(fight.player1, 'p1', i)}
+                          disabled={fetchingTier === `${i}-p1`}
+                          title={`Fetch ${fight.player1 || 'P1'} tier`}
+                          style={{
+                            padding: '0 8px', border: '1px solid rgba(255,255,255,0.09)',
+                            background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
+                            cursor: 'pointer', fontSize: 11, flexShrink: 0,
+                            opacity: fetchingTier === `${i}-p1` ? 0.4 : 1,
+                            transition: 'background 0.12s, color 0.12s',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#fff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+                        >
+                          {fetchingTier === `${i}-p1` ? '…' : '⟳'}
+                        </button>
+                      </div>
+
                       <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 11, textAlign: 'center' }}>—</span>
-                      <select style={{ ...selectStyle, color: fight.tier2 ? getTierColor(fight.tier2) : 'rgba(255,255,255,0.25)', fontWeight: fight.tier2 ? 700 : 400 }}
-                        value={fight.tier2} onChange={e => updateFight(i, 'tier2', e.target.value)}>
-                        <option value="">P2 tier</option>
-                        {TIERS.map(t => <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>)}
-                      </select>
+
+                      {/* P2 tier */}
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <select
+                          style={{ ...selectStyle, flex: 1, color: fight.tier2 ? getTierColor(fight.tier2) : 'rgba(255,255,255,0.25)', fontWeight: fight.tier2 ? 700 : 400 }}
+                          value={fight.tier2} onChange={e => updateFight(i, 'tier2', e.target.value)}
+                        >
+                          <option value="">P2 tier</option>
+                          {TIERS.map(t => <option key={t} value={t} style={{ color: getTierColor(t), background: '#111118' }}>{t}</option>)}
+                        </select>
+                        <button
+                          onClick={() => fetchAndSetTier(fight.player2, 'p2', i)}
+                          disabled={fetchingTier === `${i}-p2`}
+                          title={`Fetch ${fight.player2 || 'P2'} tier`}
+                          style={{
+                            padding: '0 8px', border: '1px solid rgba(255,255,255,0.09)',
+                            background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)',
+                            cursor: 'pointer', fontSize: 11, flexShrink: 0,
+                            opacity: fetchingTier === `${i}-p2` ? 0.4 : 1,
+                            transition: 'background 0.12s, color 0.12s',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.color = '#fff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+                        >
+                          {fetchingTier === `${i}-p2` ? '…' : '⟳'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -723,6 +873,8 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
               padding: '8px 12px', marginBottom: 10,
             }}>{error}</div>
           )}
+
+          {/* Success banner */}
           {success && (
             <div style={{
               fontSize: 12, color: '#4ade80',
@@ -731,29 +883,35 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
               borderLeft: '3px solid #4ade80',
               padding: '8px 12px', marginBottom: 10,
               letterSpacing: '0.04em',
-            }}>✓ Tier updated successfully!</div>
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <span>✓ Tier updated successfully!</span>
+              <button onClick={() => setSuccess(false)} style={{
+                background: 'none', border: '1px solid rgba(74,222,128,0.3)',
+                color: '#4ade80', cursor: 'pointer', fontSize: 11,
+                fontWeight: 700, padding: '2px 8px', letterSpacing: '0.06em',
+              }}>
+                + New
+              </button>
+            </div>
           )}
 
           {/* Submit */}
           <button
             onClick={handleSubmitClick}
-            disabled={submitting || success}
+            disabled={submitting}
             style={{
               width: '100%', padding: '11px', borderRadius: 0, border: 'none',
-              background: success
-                ? 'rgba(74,222,128,0.12)'
-                : submitting
-                ? 'rgba(74,163,255,0.2)'
-                : 'linear-gradient(135deg, #4aa3ff, #b56bff)',
-              color: success ? '#4ade80' : '#fff',
+              background: submitting ? 'rgba(74,163,255,0.2)' : 'linear-gradient(135deg, #4aa3ff, #b56bff)',
+              color: '#fff',
               fontWeight: 800, fontSize: 12,
               letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: submitting || success ? 'not-allowed' : 'pointer',
+              cursor: submitting ? 'not-allowed' : 'pointer',
               opacity: submitting ? 0.6 : 1,
               transition: 'opacity 0.15s',
             }}
           >
-            {submitting ? 'Submitting...' : success ? '✓ Submitted' : 'Submit Tier Update'}
+            {submitting ? 'Submitting...' : 'Submit Tier Update'}
           </button>
         </div>
       </div>

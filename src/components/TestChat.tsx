@@ -27,7 +27,9 @@ export default function TestChat({ entryId, myName, otherName }: TestChatProps) 
     });
     channel
       .on('broadcast', { event: 'message' }, ({ payload }) => {
-        setMessages(prev => [...prev, payload as Message]);
+        const msg = payload as Message;
+        setMessages(prev => [...prev, msg]);
+        if (msg.sender !== myName) playNotif();
       })
       .subscribe();
     channelRef.current = channel;
@@ -46,6 +48,24 @@ export default function TestChat({ entryId, myName, otherName }: TestChatProps) 
       payload: { sender: myName, text: input.trim(), at: Date.now() },
     });
     setInput('');
+  }
+
+  function playNotif() {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.25);
+      osc.onended = () => ctx.close();
+    } catch {}
   }
 
   return (

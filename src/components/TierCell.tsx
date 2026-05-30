@@ -5,9 +5,9 @@ import Image from 'next/image';
 interface TierCellProps {
   mode: Mode;
   tier: TierType;
+  coeff?: number | null;
 }
 
-// Original tier color palette preserved exactly
 const TIER_COLORS: Record<string, string> = {
   HT1: '#ffffff', LT1: '#8b0000',
   HT2: '#ff0000', LT2: '#ff7575',
@@ -18,9 +18,13 @@ const TIER_COLORS: Record<string, string> = {
   U:   '#333333',
 };
 
-export default function TierCell({ mode, tier }: TierCellProps) {
+export default function TierCell({ mode, tier, coeff }: TierCellProps) {
   const isUnranked = tier === 'U';
   const color = TIER_COLORS[tier] ?? '#555555';
+
+  const isGlowing  = !isUnranked && coeff != null && coeff >= 9;
+  const isShaking  = !isUnranked && coeff != null && coeff < -6;
+  const animClass  = isGlowing ? 'tier-glow' : isShaking ? 'tier-shake' : '';
 
   return (
     <div
@@ -44,7 +48,7 @@ export default function TierCell({ mode, tier }: TierCellProps) {
             transform: 'translateX(-50%)',
             background: '#0f0f14',
             border: `1.5px solid ${color}`,
-            borderRadius: 0, // sharp
+            borderRadius: 0,
             padding: '10px 14px',
             opacity: 0,
             pointerEvents: 'none',
@@ -62,17 +66,18 @@ export default function TierCell({ mode, tier }: TierCellProps) {
             Tier {tier}
           </div>
           <div style={{ fontSize: 12, opacity: 0.7, color: 'rgba(255,255,255,0.6)' }}>
-            +{TIER_POINT_MAP[tier]} pts
+            +{TIER_POINT_MAP[tier]} Pts
           </div>
         </div>
       )}
 
-      {/* Icon circle — sharp border, original tier color */}
+      {/* Icon square */}
       <div
+        className={animClass}
         style={{
           width: 54,
           height: 54,
-          borderRadius: 0, // SHARP — key change
+          borderRadius: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -115,11 +120,37 @@ export default function TierCell({ mode, tier }: TierCellProps) {
       </div>
 
       <style jsx>{`
+        /* ── Hover effects ── */
         .group:hover > div:first-child {
           opacity: 1 !important;
         }
         .group:hover > div:nth-child(2) {
           box-shadow: inset 0 0 14px ${color}40, 0 0 8px ${color}30 !important;
+        }
+
+        /* ── Glow: pulses in and out every 3s ── */
+        @keyframes tier-glow-anim {
+          0%   { box-shadow: inset 0 0 10px ${color}40, 0 0 10px ${color}80; }
+          50%  { box-shadow: inset 0 0 30px ${color}99, 0 0 40px ${color}ff, 0 0 70px ${color}99, 0 0 100px ${color}55; }
+          100% { box-shadow: inset 0 0 10px ${color}40, 0 0 10px ${color}80; }
+        }
+        .tier-glow {
+          animation: tier-glow-anim 3s ease-in-out infinite;
+        }
+
+        /* ── Shake: wobbles like it's about to fall off every 3s ── */
+        @keyframes tier-shake-anim {
+          0%,  70%, 100% { transform: rotate(0deg)      translateX(0px); }
+          72%            { transform: rotate(-4deg)     translateX(-2px); }
+          74%            { transform: rotate( 4deg)     translateX( 2px); }
+          76%            { transform: rotate(-3deg)     translateX(-2px); }
+          78%            { transform: rotate( 3deg)     translateX( 2px); }
+          80%            { transform: rotate(-2deg)     translateX(-1px); }
+          82%            { transform: rotate( 1deg)     translateX( 1px); }
+          84%            { transform: rotate(0deg)      translateX(0px); }
+        }
+        .tier-shake {
+          animation: tier-shake-anim 3s ease-in-out infinite;
         }
       `}</style>
     </div>

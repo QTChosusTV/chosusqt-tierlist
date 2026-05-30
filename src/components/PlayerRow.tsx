@@ -119,7 +119,7 @@ const rankBorderStyle = (rank: number, points: number): React.CSSProperties => (
 });
 
 export default function PlayerRow({ player, rank, selectedMode, coeffMap }: PlayerRowProps) {
-  const scoreColor = getScoreColor(player._points);
+  const scoreColor = getScoreColor(player._points/8);
   const rColor = getRankAccentColor(rank, player._points);
 
   return (
@@ -199,7 +199,7 @@ export default function PlayerRow({ player, rank, selectedMode, coeffMap }: Play
           >
             {/* Relative wrapper so CoeffBadge can anchor top-right */}
             <div style={{ position: 'relative', display: 'inline-flex' }}>
-              <TierCell mode={mode} tier={tier} />
+              <TierCell mode={mode} tier={tier} coeff={coeff} />
               <CoeffBadge coeff={coeff} tier={tier} />
             </div>
           </div>

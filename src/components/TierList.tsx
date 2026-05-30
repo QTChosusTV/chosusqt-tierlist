@@ -137,12 +137,21 @@ export default function TierList() {
     if (selectedMode === 'overall') {
       setFilteredPlayers(players);
     } else {
+      const coeffCol = MODE_TO_COEFF[selectedMode];
+
       const sorted = [...players].sort((a, b) => {
         const aTier = (a[selectedMode]?.toUpperCase() || 'U') as TierType;
         const bTier = (b[selectedMode]?.toUpperCase() || 'U') as TierType;
         const aTierOrder = TIER_ORDER[aTier] ?? 999;
         const bTierOrder = TIER_ORDER[bTier] ?? 999;
+
         if (aTierOrder !== bTierOrder) return aTierOrder - bTierOrder;
+
+        // Same tier → sort by coeff descending
+        const aCoeff = coeffCol ? ((a as any)[coeffCol] ?? 0) : 0;
+        const bCoeff = coeffCol ? ((b as any)[coeffCol] ?? 0) : 0;
+        if (aCoeff !== bCoeff) return bCoeff - aCoeff;
+
         return b._points - a._points;
       });
       setFilteredPlayers(sorted);
@@ -371,7 +380,7 @@ export default function TierList() {
                 {/* LEFT — tier score list */}
                 <div style={{ flex: '0 0 190px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 6 }}>
-                    Score per tier
+                    Base Score Values per tier
                   </div>
                   {TIER_INFO.slice().reverse().map(t => (
                     <div key={t.tier} style={{
@@ -386,8 +395,8 @@ export default function TierList() {
                       <div style={{ color: t.color, fontSize: 14, fontWeight: 900, minWidth: 44, textAlign: 'right' }}>{t.label}</div>
                     </div>
                   ))}
-                  <div style={{ marginTop: 8, fontSize: 10, opacity: 0.3, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    Lower → Higher skill
+                  <div style={{ marginTop: 8, fontSize: 10, opacity: 0.3, textAlign: 'left', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Resulting score are calculated based on the original score, not just being set to the score itself.
                   </div>
                 </div>
 
@@ -406,7 +415,7 @@ export default function TierList() {
                     </div>
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.6 }}>
                       Evaluated by a tester of known tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>T</span>.
-                      All matches are FT7. The result is determined by the tester's judgment — no scoring formula applies here.
+                      All matches are FT7. The result is determined by the tester's judgment; no scoring formula applies here.
                     </p>
                   </div>
 
@@ -423,7 +432,7 @@ export default function TierList() {
 
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: '0 0 12px 0', lineHeight: 1.6 }}>
                       To promote from your current tier <span style={{ color: 'rgba(255,255,255,0.75)', fontWeight: 700 }}>X</span>, reach a session score of <span style={{ color: '#ffcc55', fontWeight: 800 }}>≥ 9</span> in a single high test.
-                      If a higher-tier opponent is available, fight a same-tier validation first — then the X+1. No X−1 fights.
+                      If a higher-tier opponent is available, fight a same-tier validation first, then the X+1.
                     </p>
 
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
@@ -455,6 +464,7 @@ export default function TierList() {
                       {[
                         { cond: 'Cumulative coefficient drops below −9', val: '→ Demote to X−1', color: '#ff3333' },
                         { cond: 'Coefficient resets after any tier change', val: 'Reset to 0', color: '#ffaa55' },
+                        { cond: 'Losing any high-test fight as a HT1', val: '→ Demote to LT1', color: '#960000' },
                       ].map((p, i) => (
                         <div key={i} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,

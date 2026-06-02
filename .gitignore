@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# misc
+CONVERSION_GUIDE.md*
+CONVERSION_GUIDE.md 

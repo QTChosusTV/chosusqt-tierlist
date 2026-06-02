@@ -117,16 +117,16 @@ const DB_BATCH = 80;
 
 function PlayerAvatar({ username, uuid, size = 36 }: { username: string; uuid?: string; size?: number }) {
   const src = uuid
-    ? `https://mc-heads.net/avatar/${uuid}`
-    : `https://mc-heads.net/avatar/${username}`;
+    ? `https://mc-heads.net/head/${uuid}`
+    : `https://mc-heads.net/head/${username}`;
   return (
     <Image
       src={src} alt={username} width={size} height={size}
       style={{
         borderRadius: 0,
-        border: '1px solid rgba(255,255,255,0.1)',
         display: 'block', objectFit: 'cover',
-        flexShrink: 0, imageRendering: 'pixelated',
+        flexShrink: 0, imageRendering: 'pixelated', 
+        marginLeft: -2
       }}
     />
   );

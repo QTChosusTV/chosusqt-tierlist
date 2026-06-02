@@ -24,11 +24,11 @@
   function PlayerAvatar({ username, size = 32 }: { username: string; size?: number }) {
     return (
       <Image
-        src={`https://mc-heads.net/avatar/${username}`}
+        src={`https://mc-heads.net/head/${username}`}
         alt={username}
         width={size}
         height={size}
-        style={{ borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.55)', display: 'block', objectFit: 'cover', flexShrink: 0 }}
+        style={{ borderRadius: 6, display: 'block', objectFit: 'cover', flexShrink: 0 }}
       />
     );
   }

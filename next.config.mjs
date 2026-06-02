@@ -5,6 +5,11 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'mc-heads.net',
+        pathname: '/head/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mc-heads.net',
         pathname: '/avatar/**',
       },
     ],

@@ -149,15 +149,9 @@ export default function PlayerRow({ player, rank, selectedMode, coeffMap }: Play
       {/* Avatar */}
       <div style={{ width: 54, height: 54, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Image
-          src={`https://mc-heads.net/avatar/${player.uuid}`}
+          src={`https://mc-heads.net/head/${player.username}`}
           alt={player.username}
           width={54} height={54}
-          style={{
-            borderRadius: 0,
-            border: rank <= 3 ? `1px solid ${rColor}60` : '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-            display: 'block', objectFit: 'cover', imageRendering: 'pixelated',
-          }}
         />
       </div>
 

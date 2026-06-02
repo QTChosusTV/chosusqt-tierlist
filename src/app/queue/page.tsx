@@ -28,11 +28,10 @@ interface TesterStatus {
 function PlayerAvatar({ username, size = 32 }: { username: string; size?: number }) {
   return (
     <Image
-      src={`https://mc-heads.net/avatar/${username}`}
+      src={`https://mc-heads.net/head/${username}`}
       alt={username} width={size} height={size}
       style={{
         borderRadius: 0,
-        border: '1px solid rgba(255,255,255,0.1)',
         display: 'block', objectFit: 'cover',
         flexShrink: 0, imageRendering: 'pixelated',
       }}

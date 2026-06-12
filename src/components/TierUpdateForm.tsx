@@ -229,6 +229,15 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
     setFetchingTier(null);
   }
 
+  // isHighTestEntry — only System tester matters now
+  function isHighTestEntry(fights: Fight[], tested: string, tester: string): boolean {
+    return tester === 'System';
+  }
+  // isValidation — based purely on fight count
+  function isValidationFight(fightIndex: number, totalFights: number): boolean {
+    return (totalFights === 2 || totalFights === 4) && fightIndex === 0;
+  }
+
   // ── Detect if submission is a high test ──────────────────────────────────
   const highTest = isHighTestEntry(fights, contestant, tester);
 
@@ -252,7 +261,6 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
     setError(null);
 
     if (highTest) {
-      // Fetch current coeff
       const coeffCol = MODE_TO_COEFF_COLUMN[mode.toLowerCase()];
       const { data: playerData } = await (supabase as any)
         .from('tiers')
@@ -262,18 +270,8 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
 
       const oldCumulativeCoeff: number = playerData?.[coeffCol] ?? 0;
 
-      // Determine if fight[0] is a validation fight
-      // Validation: fights.length >= 2 AND fight[0] opponent tier > tested tier
-      const hasHigherOpponent = fights.some(fight => {
-      const testedIsP1 = fight.player1 === contestant;
-      const testedTier = testedIsP1 ? fight.tier1 : fight.tier2;
-      const opponentTier = testedIsP1 ? fight.tier2 : fight.tier1;
-      if (!testedTier || !opponentTier) return false;
-        return getTierRank(opponentTier) > getTierRank(testedTier);
-      });
-      const isMultiFight = fights.length >= 2 && hasHigherOpponent;
       const fightResults: FightCoeffResult[] = fights.map((fight, i) => {
-        const isValidation = isMultiFight && i === 0;
+        const isValidation = isValidationFight(i, fights.length);
         return calcFightCoeff(fight, contestant, i, isValidation);
       }).filter(Boolean) as FightCoeffResult[];
 
@@ -299,7 +297,6 @@ export default function TierUpdateForm({ defaultTester, defaultContestant, defau
       });
       setShowConfirmModal(true);
     } else {
-      // Low test — submit directly
       await commitSubmit(null);
     }
   }

@@ -46,6 +46,200 @@
     );
   }
 
+  function RandomizerSection({
+  activeContestant,
+  inProgressUsernames,
+}: {
+  activeContestant: string | null;
+  inProgressUsernames: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState('');
+  const [tier, setTier] = useState('');
+  const [count, setCount] = useState(3);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const TIERS = ['HT1','LT1','HT2','LT2','HT3','LT3','HT4','LT4','HT5','LT5','HT6','LT6'];
+
+  async function handleRandomize() {
+    if (!mode || !tier) { setError('Pick a mode and tier first.'); return; }
+    setError(null);
+    setLoading(true);
+    setResults([]);
+
+    const { data, error: fetchError } = await (supabase as any)
+      .from('tiers')
+      .select('username')
+      .eq(mode.toLowerCase(), tier.toLowerCase());
+
+    if (fetchError || !data) {
+      setError('Failed to fetch players.');
+      setLoading(false);
+      return;
+    }
+
+    const excluded = new Set([
+      ...(activeContestant ? [activeContestant.toLowerCase()] : []),
+      ...inProgressUsernames.map(u => u.toLowerCase()),
+    ]);
+
+    const pool: string[] = (data as { username: string }[])
+      .map(d => d.username)
+      .filter(u => !excluded.has(u.toLowerCase()));
+
+    if (pool.length === 0) {
+      setError(`No available ${tier} players in ${mode.toUpperCase()}.`);
+      setLoading(false);
+      return;
+    }
+
+    // Fisher-Yates shuffle then slice
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    setResults(shuffled.slice(0, Math.min(count, shuffled.length)));
+    setLoading(false);
+  }
+
+  return (
+    <div style={{
+      marginTop: 24,
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: '#0d0d12',
+      overflow: 'hidden',
+    }}>
+      {/* Header / toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', padding: '10px 16px',
+          background: '#111118',
+          border: 'none', borderBottom: open ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+          Opponent Randomizer
+        </span>
+        <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 12, transition: 'transform 0.15s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          ▾
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ padding: '14px 16px' }}>
+          {/* Controls */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px auto', gap: 8, marginBottom: 12, alignItems: 'flex-end' }}>
+            {/* Mode */}
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Mode</div>
+              <select
+                value={mode} onChange={e => { setMode(e.target.value); setResults([]); }}
+                style={{
+                  width: '100%', padding: '8px 10px', background: '#111118',
+                  border: '1px solid rgba(255,255,255,0.09)', color: mode ? '#fff' : 'rgba(255,255,255,0.3)',
+                  fontSize: 13, outline: 'none', cursor: 'pointer', colorScheme: 'dark', boxSizing: 'border-box' as const,
+                }}
+              >
+                <option value="">Select</option>
+                {MODES.map(m => <option key={m.key} value={m.key}>{m.key.toUpperCase()}</option>)}
+              </select>
+            </div>
+
+            {/* Tier */}
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Tier</div>
+              <select
+                value={tier} onChange={e => { setTier(e.target.value); setResults([]); }}
+                style={{
+                  width: '100%', padding: '8px 10px', background: '#111118',
+                  border: '1px solid rgba(255,255,255,0.09)', color: tier ? '#fff' : 'rgba(255,255,255,0.3)',
+                  fontSize: 13, outline: 'none', cursor: 'pointer', colorScheme: 'dark', boxSizing: 'border-box' as const,
+                }}
+              >
+                <option value="">Select</option>
+                {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            {/* Count */}
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5 }}>Count</div>
+              <input
+                type="number" min={1} max={20} value={count}
+                onChange={e => setCount(Math.max(1, Math.min(20, Number(e.target.value))))}
+                style={{
+                  width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.09)', color: '#fff',
+                  fontSize: 13, outline: 'none', boxSizing: 'border-box' as const, textAlign: 'center',
+                }}
+              />
+            </div>
+
+            {/* Randomize button */}
+            <div style={{ paddingBottom: 0 }}>
+              <div style={{ fontSize: 10, color: 'transparent', marginBottom: 5 }}>_</div>
+              <button
+                onClick={handleRandomize}
+                disabled={loading}
+                style={{
+                  padding: '8px 14px', border: 'none',
+                  background: loading ? 'rgba(74,163,255,0.2)' : 'linear-gradient(135deg, #4aa3ff, #b56bff)',
+                  color: '#fff', fontWeight: 800, fontSize: 12,
+                  letterSpacing: '0.06em', textTransform: 'uppercase' as const,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap' as const,
+                  width: '100%',
+                }}
+              >
+                {loading ? '…' : '⚄ Roll'}
+              </button>
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              fontSize: 12, color: '#ff6b8a',
+              background: 'rgba(255,107,138,0.06)',
+              border: '1px solid rgba(255,107,138,0.2)',
+              borderLeft: '3px solid #ff6b8a',
+              padding: '7px 10px', marginBottom: 10,
+            }}>{error}</div>
+          )}
+
+          {/* Results */}
+          {results.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+                {results.length} opponent{results.length > 1 ? 's' : ''} selected
+              </div>
+              {results.map((username, i) => (
+                <div key={username} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderLeft: '2px solid rgba(74,163,255,0.3)',
+                }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', fontWeight: 700, minWidth: 18 }}>#{i + 1}</span>
+                  <PlayerAvatar username={username} size={28} />
+                  <span style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>{username}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
   export default function TesterPage() {
     const [newPassword, setNewPassword] = useState('');
     const [isRecovery, setIsRecovery] = useState(false);
@@ -441,6 +635,17 @@
             defaultMode={myActive?.mode ?? ''}
           />
         </div>
+
+        {/* ── Opponent Randomizer (ChosusQT only) ── */}
+        {testerUsername === 'ChosusQT' && (
+          <RandomizerSection
+            activeContestant={myActive?.username ?? null}
+            inProgressUsernames={queue.filter(e => e.status === 'in_progress').map(e => e.username)}
+          />
+        )}
+
       </div>
+      
+
     );
   }
